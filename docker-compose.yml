@@ -1,0 +1,20 @@
+# Phase 0: only Qdrant. The backend, frontend and optional Ollama container
+# are added in Phase 7.
+name: local-llm-rag
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.20.2
+    ports:
+      # Bound to localhost only: Qdrant has no authentication by default and
+      # the documents are sensitive.
+      - "127.0.0.1:6333:6333"   # REST API + web dashboard (/dashboard)
+      - "127.0.0.1:6334:6334"   # gRPC
+    volumes:
+      # A Docker named volume, not a Windows folder: Qdrant does not support
+      # storage on Windows bind mounts.
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:

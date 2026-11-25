@@ -1,0 +1,37 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# --- Secrets and local configuration ---
+.env
+
+# --- Data: raw documents are NEVER committed (downloaded by `python -m app.download`) ---
+data/raw/
+data/processed/
+data/*.db
+data/*.db-journal
+
+# --- Model weights and caches (fine-tuned models live in models/) ---
+models/
+.cache/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+*.gguf
+
+# --- Frontend ---
+node_modules/
+frontend/dist/
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

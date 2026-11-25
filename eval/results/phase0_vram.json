@@ -1,0 +1,1049 @@
+[
+  {
+    "label": "apps-open",
+    "timestamp": "2026-11-25T19:35:13",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 1096,
+    "peak_mib": 7646,
+    "gpu_full_warning": false,
+    "embedder_mib": 1255,
+    "ingest_peak_mib": 1468,
+    "reranker_mib": 1651,
+    "llm_mib": 3510,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 6.36,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 280.9,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 23.8,
+    "embed_query_s": 2.495,
+    "rerank_30_s": 0.704,
+    "llm_answer_s": 19.75,
+    "question_total_s": 22.95,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.04,
+        "gpu_used_mib": 1096,
+        "gpu_peak_mib": 1096,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 5.77,
+        "gpu_used_mib": 2351,
+        "gpu_peak_mib": 2351,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.57,
+        "gpu_used_mib": 2328,
+        "gpu_peak_mib": 2564,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 5.91,
+        "gpu_used_mib": 3979,
+        "gpu_peak_mib": 3979,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 23.81,
+        "gpu_used_mib": 7489,
+        "gpu_peak_mib": 7490,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 22.95,
+        "gpu_used_mib": 7543,
+        "gpu_peak_mib": 7646,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-open",
+    "timestamp": "2026-11-25T19:36:41",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 1163,
+    "peak_mib": 7634,
+    "gpu_full_warning": false,
+    "embedder_mib": 1254,
+    "ingest_peak_mib": 1490,
+    "reranker_mib": 1612,
+    "llm_mib": 3634,
+    "llm_size_mib": 5328,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 5.99,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 338.4,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 26.0,
+    "embed_query_s": 2.025,
+    "rerank_30_s": 0.803,
+    "llm_answer_s": 17.28,
+    "question_total_s": 20.11,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.05,
+        "gpu_used_mib": 1163,
+        "gpu_peak_mib": 1163,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 5.43,
+        "gpu_used_mib": 2417,
+        "gpu_peak_mib": 2417,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.6,
+        "gpu_used_mib": 2385,
+        "gpu_peak_mib": 2653,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 6.61,
+        "gpu_used_mib": 3997,
+        "gpu_peak_mib": 4027,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 12.77,
+        "gpu_used_mib": 7631,
+        "gpu_peak_mib": 7632,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 20.11,
+        "gpu_used_mib": 7597,
+        "gpu_peak_mib": 7634,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-open",
+    "timestamp": "2026-11-25T19:38:16",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 1081,
+    "peak_mib": 7606,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 169,
+    "reranker_mib": 1842,
+    "llm_mib": 4570,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 3.18,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 273.6,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 22.2,
+    "embed_query_s": 0.255,
+    "rerank_30_s": 1.94,
+    "llm_answer_s": 20.57,
+    "question_total_s": 22.77,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.05,
+        "gpu_used_mib": 1081,
+        "gpu_peak_mib": 1081,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.96,
+        "gpu_used_mib": 1081,
+        "gpu_peak_mib": 1081,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 26.99,
+        "gpu_used_mib": 1112,
+        "gpu_peak_mib": 1250,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 7.14,
+        "gpu_used_mib": 2954,
+        "gpu_peak_mib": 2954,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 9.76,
+        "gpu_used_mib": 7524,
+        "gpu_peak_mib": 7527,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 22.77,
+        "gpu_used_mib": 7510,
+        "gpu_peak_mib": 7606,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-open",
+    "timestamp": "2026-11-25T19:39:33",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 993,
+    "peak_mib": 7639,
+    "gpu_full_warning": false,
+    "embedder_mib": -34,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 1794,
+    "llm_mib": 4788,
+    "llm_size_mib": 5328,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.65,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2509.7,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 59.4,
+    "embed_query_s": 0.349,
+    "rerank_30_s": 0.96,
+    "llm_answer_s": 5.59,
+    "question_total_s": 6.9,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.04,
+        "gpu_used_mib": 993,
+        "gpu_peak_mib": 993,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.43,
+        "gpu_used_mib": 959,
+        "gpu_peak_mib": 993,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 27.01,
+        "gpu_used_mib": 963,
+        "gpu_peak_mib": 993,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 6.78,
+        "gpu_used_mib": 2757,
+        "gpu_peak_mib": 2757,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 9.19,
+        "gpu_used_mib": 7545,
+        "gpu_peak_mib": 7560,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 6.9,
+        "gpu_used_mib": 7639,
+        "gpu_peak_mib": 7639,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-open",
+    "timestamp": "2026-11-25T19:42:40",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cpu",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 1049,
+    "peak_mib": 7198,
+    "gpu_full_warning": false,
+    "embedder_mib": 5,
+    "ingest_peak_mib": 5,
+    "reranker_mib": 19,
+    "llm_mib": 6076,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 4.25,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2963.0,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 68.6,
+    "embed_query_s": 0.27,
+    "rerank_30_s": 53.698,
+    "llm_answer_s": 6.44,
+    "question_total_s": 60.41,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.05,
+        "gpu_used_mib": 1049,
+        "gpu_peak_mib": 1097
+      },
+      {
+        "step": "embedder",
+        "seconds": 3.4,
+        "gpu_used_mib": 1054,
+        "gpu_peak_mib": 1054
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 31.36,
+        "gpu_used_mib": 1054,
+        "gpu_peak_mib": 1054
+      },
+      {
+        "step": "reranker",
+        "seconds": 56.78,
+        "gpu_used_mib": 1073,
+        "gpu_peak_mib": 1181
+      },
+      {
+        "step": "llm",
+        "seconds": 10.81,
+        "gpu_used_mib": 7149,
+        "gpu_peak_mib": 7149
+      },
+      {
+        "step": "full_question",
+        "seconds": 60.41,
+        "gpu_used_mib": 7148,
+        "gpu_peak_mib": 7198
+      }
+    ]
+  },
+  {
+    "label": "apps-closed",
+    "timestamp": "2026-11-25T19:49:33",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 829,
+    "peak_mib": 7579,
+    "gpu_full_warning": false,
+    "embedder_mib": 1255,
+    "ingest_peak_mib": 1491,
+    "reranker_mib": 1628,
+    "llm_mib": 3811,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.72,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 320.8,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 27.4,
+    "embed_query_s": 1.661,
+    "rerank_30_s": 0.685,
+    "llm_answer_s": 17.33,
+    "question_total_s": 19.67,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.03,
+        "gpu_used_mib": 829,
+        "gpu_peak_mib": 829,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 4.43,
+        "gpu_used_mib": 2084,
+        "gpu_peak_mib": 2084,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.55,
+        "gpu_used_mib": 2084,
+        "gpu_peak_mib": 2320,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.13,
+        "gpu_used_mib": 3712,
+        "gpu_peak_mib": 3712,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 9.1,
+        "gpu_used_mib": 7523,
+        "gpu_peak_mib": 7523,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 19.67,
+        "gpu_used_mib": 7579,
+        "gpu_peak_mib": 7579,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-closed",
+    "timestamp": "2026-11-25T19:50:20",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 550,
+    "peak_mib": 7636,
+    "gpu_full_warning": false,
+    "embedder_mib": 1255,
+    "ingest_peak_mib": 1491,
+    "reranker_mib": 1628,
+    "llm_mib": 4150,
+    "llm_size_mib": 5328,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.64,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2686.1,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 68.1,
+    "embed_query_s": 0.457,
+    "rerank_30_s": 0.708,
+    "llm_answer_s": 4.99,
+    "question_total_s": 6.16,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.06,
+        "gpu_used_mib": 550,
+        "gpu_peak_mib": 550,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 3.71,
+        "gpu_used_mib": 1805,
+        "gpu_peak_mib": 1805,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.52,
+        "gpu_used_mib": 1805,
+        "gpu_peak_mib": 2041,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 3.9,
+        "gpu_used_mib": 3433,
+        "gpu_peak_mib": 3433,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 9.04,
+        "gpu_used_mib": 7583,
+        "gpu_peak_mib": 7583,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 6.16,
+        "gpu_used_mib": 7636,
+        "gpu_peak_mib": 7636,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-closed",
+    "timestamp": "2026-11-25T19:51:33",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 529,
+    "peak_mib": 7672,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 1794,
+    "llm_mib": 5186,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.65,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 1372.0,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 62.3,
+    "embed_query_s": 0.252,
+    "rerank_30_s": 0.898,
+    "llm_answer_s": 6.17,
+    "question_total_s": 7.32,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.04,
+        "gpu_used_mib": 529,
+        "gpu_peak_mib": 529,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.3,
+        "gpu_used_mib": 529,
+        "gpu_peak_mib": 529,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 26.13,
+        "gpu_used_mib": 529,
+        "gpu_peak_mib": 529,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.77,
+        "gpu_used_mib": 2323,
+        "gpu_peak_mib": 2323,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 9.04,
+        "gpu_used_mib": 7509,
+        "gpu_peak_mib": 7514,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 7.32,
+        "gpu_used_mib": 7642,
+        "gpu_peak_mib": 7672,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-closed",
+    "timestamp": "2026-11-25T19:52:44",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 537,
+    "peak_mib": 7496,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 1793,
+    "llm_mib": 5162,
+    "llm_size_mib": 5328,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.39,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2701.8,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 70.4,
+    "embed_query_s": 0.29,
+    "rerank_30_s": 0.755,
+    "llm_answer_s": 4.76,
+    "question_total_s": 5.81,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.03,
+        "gpu_used_mib": 537,
+        "gpu_peak_mib": 537,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.3,
+        "gpu_used_mib": 537,
+        "gpu_peak_mib": 537,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 26.61,
+        "gpu_used_mib": 537,
+        "gpu_peak_mib": 537,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.75,
+        "gpu_used_mib": 2330,
+        "gpu_peak_mib": 2330,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 8.82,
+        "gpu_used_mib": 7492,
+        "gpu_peak_mib": 7492,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 5.81,
+        "gpu_used_mib": 7492,
+        "gpu_peak_mib": 7496,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-closed",
+    "timestamp": "2026-11-25T19:55:42",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cpu",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 510,
+    "peak_mib": 6585,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 0,
+    "llm_mib": 6075,
+    "llm_size_mib": 5908,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.75,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2803.1,
+    "output_tokens": 235,
+    "llm_tokens_per_s": 70.0,
+    "embed_query_s": 0.243,
+    "rerank_30_s": 50.271,
+    "llm_answer_s": 6.46,
+    "question_total_s": 56.97,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.04,
+        "gpu_used_mib": 510,
+        "gpu_peak_mib": 510
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.28,
+        "gpu_used_mib": 510,
+        "gpu_peak_mib": 510
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 26.07,
+        "gpu_used_mib": 510,
+        "gpu_peak_mib": 510
+      },
+      {
+        "step": "reranker",
+        "seconds": 53.03,
+        "gpu_used_mib": 510,
+        "gpu_peak_mib": 510
+      },
+      {
+        "step": "llm",
+        "seconds": 9.18,
+        "gpu_used_mib": 6585,
+        "gpu_peak_mib": 6585
+      },
+      {
+        "step": "full_question",
+        "seconds": 56.97,
+        "gpu_used_mib": 6585,
+        "gpu_peak_mib": 6585
+      }
+    ]
+  },
+  {
+    "label": "apps-closed-kvq8",
+    "timestamp": "2026-11-25T20:16:11",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 813,
+    "peak_mib": 7719,
+    "gpu_full_warning": false,
+    "embedder_mib": 1255,
+    "ingest_peak_mib": 1491,
+    "reranker_mib": 1628,
+    "llm_mib": 3951,
+    "llm_size_mib": 5371,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 6.17,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 222.1,
+    "output_tokens": 208,
+    "llm_tokens_per_s": 23.4,
+    "embed_query_s": 1.304,
+    "rerank_30_s": 0.711,
+    "llm_answer_s": 20.61,
+    "question_total_s": 22.62,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.04,
+        "gpu_used_mib": 813,
+        "gpu_peak_mib": 813,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 3.75,
+        "gpu_used_mib": 2068,
+        "gpu_peak_mib": 2068,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.6,
+        "gpu_used_mib": 2068,
+        "gpu_peak_mib": 2304,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.82,
+        "gpu_used_mib": 3696,
+        "gpu_peak_mib": 3696,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 12.76,
+        "gpu_used_mib": 7647,
+        "gpu_peak_mib": 7663,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 22.62,
+        "gpu_used_mib": 7705,
+        "gpu_peak_mib": 7719,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-closed-kvq8",
+    "timestamp": "2026-11-25T20:16:59",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cuda",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 506,
+    "peak_mib": 7725,
+    "gpu_full_warning": false,
+    "embedder_mib": 1256,
+    "ingest_peak_mib": 1492,
+    "reranker_mib": 1628,
+    "llm_mib": 4299,
+    "llm_size_mib": 5061,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.38,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 621.0,
+    "output_tokens": 208,
+    "llm_tokens_per_s": 66.0,
+    "embed_query_s": 0.321,
+    "rerank_30_s": 0.681,
+    "llm_answer_s": 7.6,
+    "question_total_s": 8.6,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.07,
+        "gpu_used_mib": 506,
+        "gpu_peak_mib": 506,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 3.65,
+        "gpu_used_mib": 1762,
+        "gpu_peak_mib": 1762,
+        "torch_peak_mib": 1117
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 0.5,
+        "gpu_used_mib": 1762,
+        "gpu_peak_mib": 1998,
+        "torch_peak_mib": 1281
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.03,
+        "gpu_used_mib": 3390,
+        "gpu_peak_mib": 3390,
+        "torch_peak_mib": 2520
+      },
+      {
+        "step": "llm",
+        "seconds": 8.97,
+        "gpu_used_mib": 7689,
+        "gpu_peak_mib": 7689,
+        "torch_peak_mib": 2200
+      },
+      {
+        "step": "full_question",
+        "seconds": 8.6,
+        "gpu_used_mib": 7721,
+        "gpu_peak_mib": 7725,
+        "torch_peak_mib": 2520
+      }
+    ]
+  },
+  {
+    "label": "apps-closed-kvq8",
+    "timestamp": "2026-11-25T20:18:35",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 507,
+    "peak_mib": 7663,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 1793,
+    "llm_mib": 5363,
+    "llm_size_mib": 5371,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.36,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 247.7,
+    "output_tokens": 208,
+    "llm_tokens_per_s": 26.5,
+    "embed_query_s": 0.232,
+    "rerank_30_s": 0.68,
+    "llm_answer_s": 17.96,
+    "question_total_s": 18.87,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.06,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.37,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 24.59,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.94,
+        "gpu_used_mib": 2300,
+        "gpu_peak_mib": 2300,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 22.21,
+        "gpu_used_mib": 7663,
+        "gpu_peak_mib": 7663,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 18.87,
+        "gpu_used_mib": 7663,
+        "gpu_peak_mib": 7663,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-closed-kvq8",
+    "timestamp": "2026-11-25T20:19:42",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cuda",
+    "num_ctx": 4096,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 507,
+    "peak_mib": 7531,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 1793,
+    "llm_mib": 5231,
+    "llm_size_mib": 5061,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.44,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2949.8,
+    "output_tokens": 208,
+    "llm_tokens_per_s": 66.1,
+    "embed_query_s": 0.336,
+    "rerank_30_s": 0.69,
+    "llm_answer_s": 4.05,
+    "question_total_s": 5.08,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.07,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.14,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 24.2,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507,
+        "torch_peak_mib": 0
+      },
+      {
+        "step": "reranker",
+        "seconds": 4.68,
+        "gpu_used_mib": 2300,
+        "gpu_peak_mib": 2300,
+        "torch_peak_mib": 1435
+      },
+      {
+        "step": "llm",
+        "seconds": 9.06,
+        "gpu_used_mib": 7531,
+        "gpu_peak_mib": 7531,
+        "torch_peak_mib": 1115
+      },
+      {
+        "step": "full_question",
+        "seconds": 5.08,
+        "gpu_used_mib": 7531,
+        "gpu_peak_mib": 7531,
+        "torch_peak_mib": 1435
+      }
+    ]
+  },
+  {
+    "label": "apps-closed-kvq8",
+    "timestamp": "2026-11-25T20:22:24",
+    "llm_model": "qwen3:8b",
+    "embed_device": "cpu",
+    "rerank_device": "cpu",
+    "num_ctx": 8192,
+    "gpu_total_mib": 8151,
+    "baseline_mib": 507,
+    "peak_mib": 6048,
+    "gpu_full_warning": false,
+    "embedder_mib": 0,
+    "ingest_peak_mib": 0,
+    "reranker_mib": 0,
+    "llm_mib": 5541,
+    "llm_size_mib": 5371,
+    "llm_on_gpu_pct": 100.0,
+    "llm_load_s": 2.41,
+    "prompt_tokens": 2489,
+    "prefill_tokens_per_s": 2634.1,
+    "output_tokens": 208,
+    "llm_tokens_per_s": 66.1,
+    "embed_query_s": 0.282,
+    "rerank_30_s": 48.719,
+    "llm_answer_s": 6.23,
+    "question_total_s": 55.23,
+    "steps": [
+      {
+        "step": "baseline",
+        "seconds": 3.06,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507
+      },
+      {
+        "step": "embedder",
+        "seconds": 2.41,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507
+      },
+      {
+        "step": "ingest_batch",
+        "seconds": 24.07,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507
+      },
+      {
+        "step": "reranker",
+        "seconds": 49.51,
+        "gpu_used_mib": 507,
+        "gpu_peak_mib": 507
+      },
+      {
+        "step": "llm",
+        "seconds": 9.02,
+        "gpu_used_mib": 6048,
+        "gpu_peak_mib": 6048
+      },
+      {
+        "step": "full_question",
+        "seconds": 55.23,
+        "gpu_used_mib": 6048,
+        "gpu_peak_mib": 6048
+      }
+    ]
+  }
+]

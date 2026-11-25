@@ -1,0 +1,120 @@
+# Document manifest: the single list of documents the assistant knows about.
+#
+# Fields
+#   id               unique, stable identifier (used in chunk ids and the test set)
+#   title            shown in citations
+#   path             file location relative to data/raw/ (always <department>/<file>)
+#   department       owning department: procurement | hr | it-security | public
+#   language         declared language of the document: en | fr | ar
+#   allowed_groups   groups allowed to read it; "public" = everyone
+#   source_url       where the file comes from (direct file, or the source page)
+#   manual_download  true when source_url is a web page and not a file: put the
+#                    file at data/raw/<path> by hand; `python -m app.download`
+#                    skips it if it is there and reminds you if it is missing
+#   split            train | test for embedder fine-tuning (decided in Phase 6)
+
+documents:
+  # ---------------- procurement ----------------
+  - id: wb-procurement-regs-en
+    title: "World Bank Procurement Regulations for IPF Borrowers (7th ed., Sep 2025)"
+    path: procurement/wb-procurement-regs-en.pdf
+    department: procurement
+    language: en
+    allowed_groups: [procurement]
+    source_url: https://thedocs.worldbank.org/en/doc/c84273d1b230aeb2b0b8134de5dc8cd7-0290012025/original/Procurement-Regulations-7th-Edition-Sep-2025.pdf
+    split:
+
+  - id: wb-procurement-regs-fr
+    title: "Règlement de passation des marchés (6e éd., fév. 2025)"
+    path: procurement/wb-procurement-regs-fr.docx
+    department: procurement
+    language: fr
+    allowed_groups: [procurement]
+    source_url: https://thedocs.worldbank.org/en/doc/79e50d99bf849078e97675514ca3fd4b-0290012025/procurement-regulations-for-investment-project-financing-borrowers-february-2025-french-rev-clean-docx
+    manual_download: true
+    split:
+
+  - id: wbg-po-terms-ar
+    title: "الشروط والأحكام العامة لطلبات شراء البضائع والخدمات (2025)"
+    path: procurement/wbg-po-terms-ar.pdf
+    department: procurement
+    language: ar
+    allowed_groups: [procurement]
+    source_url: https://thedocs.worldbank.org/en/doc/42388b5f7332b013a93885cb4b327721-0180012025/original/WBG-Terms-and-Conditions-Goods-and-Services-Arabic-2025.pdf
+    split:
+
+  # ---------------- it-security ----------------
+  - id: anssi-hygiene-en
+    title: "ANSSI Guideline for a healthy information system in 42 measures"
+    path: it-security/anssi-hygiene-en.pdf
+    department: it-security
+    language: en
+    allowed_groups: [it-security]
+    source_url: https://cyber.gouv.fr/sites/default/files/2013/01/guideline-for-a-healthy-information-system-in-42-measures_v2.pdf
+    split:
+
+  - id: anssi-hygiene-fr
+    title: "ANSSI Guide d'hygiène informatique (42 mesures)"
+    path: it-security/anssi-hygiene-fr.pdf
+    department: it-security
+    language: fr
+    allowed_groups: [it-security]
+    source_url: https://www.val-doise.gouv.fr/index.php/contenu/telechargement/27984/210034/file/Guide%20Hygiene%20Informatique.pdf
+    split:
+
+  - id: anssi-ransomware-fr
+    title: "ANSSI Attaques par rançongiciels, tous concernés"
+    path: it-security/anssi-ransomware-fr.pdf
+    department: it-security
+    language: fr
+    allowed_groups: [it-security]
+    source_url: https://www.cybermalveillance.gouv.fr/medias/2019/11/anssi-guide-attaques_par_rancongiciels_tous_concernes-v1.0.pdf
+    split:
+
+  # ---------------- hr ----------------
+  - id: itcilo-conduct-en
+    title: "Principles of Conduct for Staff of the ITCILO (2015)"
+    path: hr/itcilo-conduct-en.pdf
+    department: hr
+    language: en
+    allowed_groups: [hr]
+    source_url: https://www.itcilo.org/sites/default/files/inline-files/Principles%20of%20Conduct%20for%20Staff%20of%20the%20International%20Training%20Centre%20of%20the%20International%20Labour%20Organization.pdf
+    split:
+
+  - id: ilo-harassment-policy-en
+    title: "ILO Circular 543: Sexual harassment policy and procedures"
+    path: hr/ilo-harassment-policy-en.pdf
+    department: hr
+    language: en
+    allowed_groups: [hr]
+    source_url: https://static.un.org/womenwatch/osagi/UN_system_policies/(ILO)Circular_on_Sexual_Harassment.pdf
+    split:
+
+  - id: ilo-hiv-code-employers-ar
+    title: "Using the ILO Code of Practice: Guidelines for employers (Arabic)"
+    path: hr/ilo-hiv-code-employers-ar.pdf
+    department: hr
+    language: ar
+    allowed_groups: [hr]
+    source_url: https://www.ilo.org/global/topics/hiv-aids/publications/WCMS_120368/lang--ar/index.htm
+    manual_download: true
+    split:
+
+  # ---------------- public ----------------
+  - id: wb-anticorruption-en
+    title: "World Bank Anti-Corruption Guidelines (revised July 2016)"
+    path: public/wb-anticorruption-en.pdf
+    department: public
+    language: en
+    allowed_groups: [public]
+    source_url: https://www.worldbank.org/content/dam/documents/sanctions/office-of-suspension-and-debarment/2025/feb/Anti-Corruption%20Guidelines%20(2016).pdf
+    split:
+
+  - id: wb-anticorruption-guide-fr
+    title: "Guide de l'utilisateur des Directives anti-corruption de la Banque mondiale"
+    path: public/wb-anticorruption-guide-fr.pdf
+    department: public
+    language: fr
+    allowed_groups: [public]
+    source_url: https://www.worldbank.org/content/dam/documents/sanctions/other-documents/osd/French112907.pdf
+    split:
