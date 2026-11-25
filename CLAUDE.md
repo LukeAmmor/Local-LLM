@@ -34,8 +34,14 @@ docker compose up -d qdrant                   # Qdrant on 127.0.0.1:6333 (dashbo
 uv run python scripts/check_env.py            # Phase 0: GPU, Ollama, Qdrant
 uv run python scripts/measure_vram.py --matrix --label apps-open
 uv run python scripts/measure_vram.py --summary
+uv run python -m app.download                 # download + check the manifest documents
+uv run python -m app.ingest                   # parse, clean, chunk, embed, store (skips unchanged docs)
+uv run python -m app.ingest --dry-run         # chunks only -> data/processed/chunks/<doc_id>.jsonl
+uv run python -m app.ingest --force           # REQUIRED after changing parsing/cleaning/chunking code
 uv run pytest
 ```
+The ingestion registry is keyed on the file hash + settings, not on our code:
+after a code change in parsing, cleaning or chunking, re-index with `--force`.
 Linux CPU server: `uv sync --no-default-groups --group cpu` (and run the venv's
 python directly, or keep passing the same flags to `uv run`). torch is selected
 through dependency groups, not extras, because `uv run` drops extras and would
@@ -44,6 +50,9 @@ silently swap the CUDA build for the CPU one.
 ## Layout
 - `backend/app/`: the Python package `app` (installed editable, so
   `python -m app.<module>` works from the root)
+  - ingestion pipeline: `manifest` -> `download` -> `parsing` -> `cleaning` ->
+    `chunking` (+ `langdetect`) -> `embeddings` -> `vectorstore` (Qdrant) + `db` (SQLite registry);
+    `ingest` is the CLI that runs it
 - `backend/tests/`: pytest
 - `scripts/`: one-off environment and measurement scripts
 - `data/manifest.yaml`: list of documents; `data/raw/`: downloaded files (gitignored)
@@ -64,8 +73,15 @@ silently swap the CUDA build for the CPU one.
   English vs French stop words). No package.
 - Chunk header ("Title > Section" prepended to the embedded text, not shown):
   config switch, and an experiment (with vs without).
-- DOCX has no real pages: use Word's saved page-break markers when present,
-  otherwise cite the section only. Page images only for PDFs.
+- DOCX: no pages at all, cited by section; in the UI too, DOCX citations show
+  the section, not a page. Word's saved page-break markers were measured
+  unreliable (145 markers for 151 pages, up to 8 pages of drift on
+  wb-procurement-regs-fr). Page images only for PDFs.
+- Arabic PDFs are screened by `app.download`: "no Arabic letters" (fonts without
+  Unicode mapping, e.g. old Mac "AXt" fonts) and "damaged Arabic letters"
+  (Word + Calibri exports: "في" -> "ف", "على" -> "عىل"). Such files are replaced,
+  not repaired. A failed file can stay in the manifest with `exclude: <reason>`:
+  still checked by `app.download`, never indexed by `app.ingest`.
 - Manifest field `manual_download: true` for documents whose URL is a web page;
   the student places those files by hand.
 - Phase 6: sentence-transformers fine-tunes only the dense part of bge-m3.
@@ -87,11 +103,42 @@ silently swap the CUDA build for the CPU one.
   separate steps so that the LLM has the GPU to itself.
 - Reranker on CPU takes about 50 s for 30 passages: a CPU-only server needs fewer
   candidates or no reranker (Phase 7).
+- URLs use 127.0.0.1, never "localhost": on Windows localhost tries IPv6 first
+  and Qdrant/Ollama listen on IPv4 only (+2 s per new connection, measured).
+- `model_files.local_model_path` is offline-first: cached models never trigger
+  a Hugging Face request.
+- PyMuPDF 2.x hard-depends on pymupdf-layout, pymupdf4llm and onnxruntime. We do
+  not use them (no layout model); they are only installed.
+- PDF parsing keeps PyMuPDF's stored block order (no `sort=True`): sorting mixes
+  two-column layouts line by line. Known cost: the procurement regulations draw
+  chapter-title boxes after the first paragraphs of chapter pages.
+- Headings: short blocks with font >= body + 1 pt, or bold. Levels by font size
+  (sizes < 1 pt apart share a level, max 3). Adjacent same-level headings merge.
+- Arabic PDF repair (parsing.repair_arabic_span): the lam-alef ligature comes out
+  swapped with a zero-width alef -> swap back; leading punctuation of Arabic
+  segments -> moved to the end. On wbg-po-terms-ar: 202 ligatures fixed, 136 -> 3
+  misplaced punctuation marks. Remaining: digits/parentheses order inside Arabic.
+- Headers/footers: text in the top/bottom 8% repeated on >= 3 pages (digits
+  ignored), plus lone page numbers (digits or roman). Dot leaders collapsed.
+- Chunking: sentences packed up to chunk_size; a heading cuts the chunk unless it
+  is still < 25% of chunk_size; overlap (trailing sentences) only on size cuts;
+  chunk section = section of its first non-heading sentence.
+- PDF headings need >= 3 letters besides roman numerals/numbers ("III" alone is
+  decoration); blocks that are only a roman numeral are dropped in cleaning.
+- DOCX headings: Word outline level (paragraph, then style chain), then style
+  name. Custom styles ("Style2", "REGs H1") are headings through outline levels.
+- wbg-po-terms-ar is bilingual EN/AR (two columns): kept on purpose as a
+  realistic mixed-language case (docs/corpus.md); language is per chunk.
+- `manual_download: true` also for URLs that refuse scripts (403) or are dead (404).
+- Corpus notes and extraction quality per document: docs/corpus.md.
 
 ## Reminders
 - Before recording the demo (end of Phase 7): re-run the default VRAM
   measurement with OBS open AND recording, and check there is no paging:
   `uv run python scripts/measure_vram.py --embed-device cpu --rerank-device cuda --num-ctx 4096 --label obs-recording`
+- Test set idea (Phase 5): an Arabic question about harassment at work must
+  retrieve both the Arabic ILO brief on Convention 190 (hr, Arabic) and the
+  English ILO harassment policy (ilo-harassment-policy-en): cross-lingual recall.
 
 ## Machine notes (dev)
 RTX 5060 8 GB (Blackwell, compute capability 12.0), about 2 GB of VRAM used by

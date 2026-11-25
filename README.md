@@ -12,4 +12,7 @@ allowed to see. English, French and Arabic.
 uv sync                        # Linux CPU server: uv sync --no-default-groups --group cpu
 docker compose up -d qdrant
 uv run python scripts/check_env.py
+uv run python -m app.download  # documents listed in data/manifest.yaml -> data/raw/
+uv run python -m app.ingest    # index them into Qdrant
+uv run pytest
 ```

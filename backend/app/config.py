@@ -38,6 +38,20 @@ class Settings(BaseSettings):
     # --- Paths ---
     data_dir: Path = REPO_ROOT / "data"
 
+    @property
+    def raw_dir(self) -> Path:
+        """Downloaded documents, one folder per department (gitignored)."""
+        return self.data_dir / "raw"
+
+    @property
+    def manifest_path(self) -> Path:
+        return self.data_dir / "manifest.yaml"
+
+    @property
+    def db_path(self) -> Path:
+        """SQLite database: document registry (later also users and audit log)."""
+        return self.data_dir / "app.db"
+
     # Default devices come from the Phase 0 measurements (docs/vram-budget.md):
     # on an 8 GB GPU only "embedder on CPU + reranker on GPU + 4k context" fits
     # without Windows paging GPU memory to RAM. One question embeds in ~0.3 s
@@ -49,6 +63,14 @@ class Settings(BaseSettings):
     embed_fp16: bool = True  # half precision halves memory; only used on cuda
     embed_batch_size: int = 16
     embed_max_length: int = 1024  # max tokens per text given to the embedder
+    # Ingestion is a separate process that runs while the LLM is unloaded, so
+    # it can use the GPU (about 35x faster than the CPU for many chunks).
+    ingest_embed_device: Device = "cuda"
+
+    # --- Chunking ---
+    chunk_size_tokens: int = 400  # maximum chunk length, in bge-m3 tokens
+    chunk_overlap_ratio: float = 0.15  # share of a chunk repeated at the start of the next one
+    chunk_add_header: bool = True  # prepend "Title > Section" to the text that is embedded
 
     # --- Reranker (cross-encoder) ---
     rerank_model: str = "BAAI/bge-reranker-v2-m3"
@@ -56,14 +78,19 @@ class Settings(BaseSettings):
     rerank_fp16: bool = True
     rerank_max_length: int = 1024  # max tokens for one (question, passage) pair
 
+    # URLs use 127.0.0.1, not "localhost": on Windows, "localhost" tries IPv6
+    # (::1) first, and Ollama and Qdrant only listen on IPv4, which costs about
+    # 2 s per new connection (measured in Phase 1).
+
     # --- LLM served by Ollama ---
-    ollama_url: str = "http://localhost:11434"
+    ollama_url: str = "http://127.0.0.1:11434"
     llm_model: str = "qwen3:8b"
     llm_num_ctx: int = 4096  # context window in tokens; drives the KV cache size in VRAM
     llm_keep_alive: str = "10m"  # how long Ollama keeps the model loaded after a request
 
     # --- Vector database ---
-    qdrant_url: str = "http://localhost:6333"
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_collection: str = "kb"  # experiments use other names, e.g. kb_c256
 
 
 @lru_cache

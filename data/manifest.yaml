@@ -8,9 +8,13 @@
 #   language         declared language of the document: en | fr | ar
 #   allowed_groups   groups allowed to read it; "public" = everyone
 #   source_url       where the file comes from (direct file, or the source page)
-#   manual_download  true when source_url is a web page and not a file: put the
-#                    file at data/raw/<path> by hand; `python -m app.download`
+#   manual_download  true when the file cannot be downloaded by the script
+#                    (source_url is a web page, or the site refuses scripts):
+#                    put the file at data/raw/<path> by hand; `python -m app.download`
 #                    skips it if it is there and reminds you if it is missing
+#   exclude          optional reason to keep the document out of the index; the
+#                    file is still checked by `python -m app.download` (findings
+#                    in docs/corpus.md)
 #   split            train | test for embedder fine-tuning (decided in Phase 6)
 
 documents:
@@ -51,6 +55,7 @@ documents:
     language: en
     allowed_groups: [it-security]
     source_url: https://cyber.gouv.fr/sites/default/files/2013/01/guideline-for-a-healthy-information-system-in-42-measures_v2.pdf
+    manual_download: true  # the URL serves a web page to scripts
     split:
 
   - id: anssi-hygiene-fr
@@ -59,7 +64,9 @@ documents:
     department: it-security
     language: fr
     allowed_groups: [it-security]
+    # DEAD LINK (404 since November 2026). The file was placed by hand (Version 2.0, September 2017).
     source_url: https://www.val-doise.gouv.fr/index.php/contenu/telechargement/27984/210034/file/Guide%20Hygiene%20Informatique.pdf
+    manual_download: true
     split:
 
   - id: anssi-ransomware-fr
@@ -79,6 +86,7 @@ documents:
     language: en
     allowed_groups: [hr]
     source_url: https://www.itcilo.org/sites/default/files/inline-files/Principles%20of%20Conduct%20for%20Staff%20of%20the%20International%20Training%20Centre%20of%20the%20International%20Labour%20Organization.pdf
+    manual_download: true  # the site answers 403 to scripts
     split:
 
   - id: ilo-harassment-policy-en
@@ -90,13 +98,24 @@ documents:
     source_url: https://static.un.org/womenwatch/osagi/UN_system_policies/(ILO)Circular_on_Sexual_Harassment.pdf
     split:
 
-  - id: ilo-hiv-code-employers-ar
-    title: "Using the ILO Code of Practice: Guidelines for employers (Arabic)"
-    path: hr/ilo-hiv-code-employers-ar.pdf
+  - id: ilo-c190-brief-ar
+    title: "اتفاقية منظمة العمل الدولية رقم 190 في البلدان العربية (ملخص سياسات، 2023)"
+    path: hr/ilo-c190-brief-ar.pdf
     department: hr
     language: ar
     allowed_groups: [hr]
-    source_url: https://www.ilo.org/global/topics/hiv-aids/publications/WCMS_120368/lang--ar/index.htm
+    source_url: "https://researchrepository.ilo.org/esploro/outputs/encyclopediaEntry/اتفاقية-منظمة-العمل-الدولية-رقم-190/995653414502676"
+    manual_download: true
+    exclude: "damaged Arabic letters (PDF exported by Word with Calibri): 'في' extracted as 'ف'"
+    split:
+
+  - id: ilo-job-evaluation-ar
+    title: "تعزيز الإنصاف: تقييم الوظائف المحايد جنسانياً من أجل المساواة في الأجور (دليل خطوة بخطوة)"
+    path: hr/ilo-job-evaluation-ar.pdf
+    department: hr
+    language: ar
+    allowed_groups: [hr]
+    source_url: https://www.ilo.org/ar/publications/promoting-equity-gender-neutral-job-evaluation-equal-pay-step-step-guide
     manual_download: true
     split:
 
