@@ -16,23 +16,13 @@ Flags printed for a file:
     average. The PDF is probably made of images and would need OCR.
   - "N pages almost empty": some pages have almost no text (scanned pages,
     figures, or blank pages).
-  - "language": the detected language differs from the declared one.
-  - "Arabic order": Arabic words come out reversed (see app.langdetect).
-  - "no Arabic letters": an Arabic document whose text comes out as Latin
-    symbols ("πª©dG" instead of "العمل"). Its fonts have no Unicode mapping
-    (old desktop-publishing fonts), so the text layer is unusable: the file
-    needs OCR or must be replaced.
-  - "damaged Arabic letters": the text is Arabic, but letter pairs drawn as a
-    single glyph (ligatures) come out wrong, e.g. "في" as "ف", "على" as "عىل",
-    "القوانين" as "القوانير". Seen in PDFs exported by Word with the Calibri
-    font. The test: "ف" alone is never an Arabic word while "في" is one of the
-    most frequent ones, so many lone "ف" and few "في" means damage.
+  - "language": the detected language differs from the declared one
+    ("other" = another script than Latin, see app.langdetect).
 
 Raw documents are never committed: data/raw/ is in .gitignore.
 """
 
 import argparse
-import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -42,14 +32,12 @@ import httpx
 import pymupdf
 
 from app.config import get_settings
-from app.langdetect import ARABIC_LETTER, arabic_word_order, detect_language
+from app.langdetect import detect_language
 from app.manifest import DocumentEntry, load_manifest
 
 USER_AGENT = "Mozilla/5.0 (compatible; local-rag-downloader/0.1)"
 MIN_CHARS_PER_PAGE = 200  # below this on average, the PDF is probably scanned
 EMPTY_PAGE_CHARS = 50  # a page with fewer characters counts as "almost empty"
-MIN_ARABIC_SHARE = 0.05  # an Arabic document with a smaller share of Arabic letters is unreadable
-MIN_BROKEN_WORDS = 5  # a few lone "ف" can be typos; more than this (and more than "في") is damage
 
 
 def download(url: str, dest: Path) -> str | None:
@@ -126,25 +114,11 @@ def check_file(path: Path, entry: DocumentEntry) -> FileCheck:
         check.flags.append("no extractable text")
     if check.detected_language != entry.language:
         check.flags.append(f"language: declared {entry.language}, detected {check.detected_language}")
-    if entry.language == "ar":
-        letters = sum(ch.isalpha() for ch in full_text)
-        arabic = len(ARABIC_LETTER.findall(full_text))
-        if letters and arabic < MIN_ARABIC_SHARE * letters:
-            check.flags.append(f"no Arabic letters ({arabic} of {letters}): fonts without Unicode mapping, "
-                               "text unusable (needs OCR or another file)")
-        words = re.findall(r"[ء-ي]+", full_text)
-        broken_fi, fi = words.count("ف"), words.count("في")
-        if broken_fi >= MIN_BROKEN_WORDS and broken_fi > fi:
-            check.flags.append(f"damaged Arabic letters ('في' extracted as 'ف' {broken_fi} times, correct {fi} times): "
-                               "font ligatures with a wrong Unicode mapping")
-        normal, reversed_ = arabic_word_order(full_text)
-        if reversed_ > normal:
-            check.flags.append(f"Arabic order looks reversed (common words: {normal} normal, {reversed_} reversed)")
     return check
 
 
 def main() -> int:
-    sys.stdout.reconfigure(encoding="utf-8")  # titles contain Arabic; Windows consoles default to cp1252
+    sys.stdout.reconfigure(encoding="utf-8")  # messages may contain any Unicode; Windows consoles default to cp1252
     parser = argparse.ArgumentParser(description="Download and check the manifest documents.")
     parser.add_argument("--only", nargs="+", metavar="DOC_ID", help="only these document ids")
     args = parser.parse_args()

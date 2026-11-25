@@ -117,8 +117,7 @@ def test_real_bge_m3_tokenizer_respects_chunk_size():
         pytest.skip("bge-m3 tokenizer not available")
     counter = HFTokenCounter(tokenizer)
     text = ("Le responsable des achats doit vérifier chaque contrat. "
-            "The Borrower shall apply the Procurement Regulations. "
-            "يجب على المورد احترام شروط طلب الشراء. ") * 60
+            "The Borrower shall apply the Procurement Regulations. ") * 90
     chunks = chunk_document([Block(text=text, page=1)], counter, "T", "en", chunk_size=100, overlap_ratio=0.15)
     assert len(chunks) > 5
     assert all(c.n_tokens <= 100 for c in chunks)

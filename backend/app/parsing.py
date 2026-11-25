@@ -25,13 +25,6 @@ A block is a paragraph or a heading, with the page it comes from.
   MD    "# Title" lines are headings, blank lines separate paragraphs. No pages.
   TXT   blank lines separate paragraphs. No pages.
 
-Arabic PDF repair (see `repair_arabic_span`): some PDFs made by Word store the
-Arabic ligature "لا" (lam + alef) as one glyph, and PyMuPDF splits it into the
-two letters in the wrong order ("الأحكام" comes out as "األحكام"). The alef
-half of the glyph always has zero width, which lets us detect and swap it
-back. Also, punctuation at the end of an Arabic segment comes out at its
-start (".في هذا الطلب"), so we move it back to the end.
-
 Why: chunking needs structure (headings, paragraphs) and citations need page
 numbers, so we keep both from the start. Cleaning (headers, footers,
 hyphenation) happens next, in app.cleaning.
@@ -53,12 +46,6 @@ MAX_HEADING_LEVEL = 3
 SAME_LEVEL_POINTS = 1.0  # heading font sizes closer than this share a level
 MERGE_GAP_POINTS = 15.0  # a heading this close below another one continues it
 NUMBER_TOKEN = re.compile(r"\b(?:[IVX]{1,5}|\d+)\b")  # roman numerals (up to XVIII) and numbers
-
-ARABIC = re.compile(r"[؀-ۿ]")
-ALEF_VARIANTS = "اأإآ"
-LAM = "ل"
-# Punctuation that PyMuPDF puts at the start of an Arabic segment instead of its end.
-LEADING_PUNCTUATION = re.compile(r"^(\s*)([.،,:؛!؟?)]+)(.*?)(\s*)$", re.S)
 
 
 @dataclass
@@ -93,27 +80,6 @@ def parse_document(path: Path) -> ParsedDocument:
 # ---------------------------------------------------------------------------
 # PDF
 # ---------------------------------------------------------------------------
-def repair_arabic_span(chars: list[dict]) -> str:
-    """Rebuild the text of one PDF span from its characters, fixing Arabic errors.
-
-    `chars` is PyMuPDF's "rawdict" character list: [{"c": "ل", "bbox": (x0, y0, x1, y1)}, ...]
-    """
-    letters = [c["c"] for c in chars]
-    # 1. Lam-alef ligature: a zero-width alef followed by a lam -> swap them.
-    for i in range(len(chars) - 1):
-        x0, _, x1, _ = chars[i]["bbox"]
-        if letters[i] in ALEF_VARIANTS and letters[i + 1] == LAM and abs(x1 - x0) < 0.01:
-            letters[i], letters[i + 1] = letters[i + 1], letters[i]
-    text = "".join(letters)
-    # 2. Arabic segment starting with punctuation: move the punctuation to the end.
-    if ARABIC.search(text):
-        m = LEADING_PUNCTUATION.match(text)
-        if m:
-            space_before, punct, body, space_after = m.groups()
-            text = space_before + body + punct + space_after
-    return text
-
-
 def parse_pdf(path: Path) -> ParsedDocument:
     # Some PDFs trigger harmless MuPDF messages (e.g. about optional layers).
     pymupdf.TOOLS.mupdf_display_errors(False)
@@ -125,16 +91,16 @@ def parse_pdf(path: Path) -> ParsedDocument:
         page_count = len(pdf)
         for page_number, page in enumerate(pdf, start=1):
             height = page.rect.height
-            for b in page.get_text("rawdict")["blocks"]:
+            # "dict": blocks -> lines -> spans (a span is a run of text with one font and size).
+            for b in page.get_text("dict")["blocks"]:
                 if b["type"] != 0:  # 1 = image block
                     continue
                 lines, block_sizes, bold_chars, n_chars = [], Counter(), 0, 0
                 for line in b["lines"]:
                     line_text = ""
                     for span in line["spans"]:
-                        span_text = repair_arabic_span(span["chars"])
-                        line_text += span_text
-                        n = len(span_text.strip())
+                        line_text += span["text"]
+                        n = len(span["text"].strip())
                         block_sizes[round(span["size"], 1)] += n
                         n_chars += n
                         if span["flags"] & 16:  # bit 4 = bold

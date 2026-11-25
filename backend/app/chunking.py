@@ -42,7 +42,7 @@ from app.parsing import Block
 MIN_CHUNK_SHARE = 0.25  # below this share of chunk_size, a chunk continues across a heading
 MAX_HEADING_IN_PATH = 80  # characters kept from each heading in the section path
 
-SENTENCE_END = re.compile(r"(?<=[.!?؟])\s+|\n+")
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+|\n+")
 
 
 class TokenCounter(Protocol):

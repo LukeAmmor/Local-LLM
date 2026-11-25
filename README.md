@@ -2,7 +2,8 @@
 
 An assistant that answers questions from internal documents with a local LLM,
 cites its sources down to the page, and only uses documents the user is
-allowed to see. English, French and Arabic.
+allowed to see. Documents and questions in English and French (a French
+question can find an English passage, and the other way round).
 
 > Work in progress. The full README (architecture, setup, results) comes in Phase 7.
 

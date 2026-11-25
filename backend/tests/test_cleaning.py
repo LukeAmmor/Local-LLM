@@ -42,12 +42,11 @@ def test_lone_page_number_removed_even_once():
     assert [b.text for b in remove_headers_footers(blocks)] == ["Body"]
 
 
-def test_normalize_ligatures_invisible_chars_and_arabic_forms():
-    assert normalize_text("ﬁnance") == "finance"
+def test_normalize_ligatures_and_invisible_chars():
+    assert normalize_text("ﬁnance") == "finance"  # "ﬁ" ligature
     assert normalize_text("procure­ment") == "procurement"  # soft hyphen
-    assert normalize_text("ﻻ") == "لا"  # Arabic presentation form -> normal letters
-    assert normalize_text("الشـــروط") == "الشروط"  # tatweel removed
-    assert normalize_text("‏نص‎") == "نص"  # bidi marks removed
+    assert normalize_text("Article 5") == "Article 5"  # non-breaking space
+    assert normalize_text("​march‎é") == "marché"  # zero-width space, bidi mark
 
 
 def test_hyphenation():

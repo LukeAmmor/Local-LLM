@@ -1,8 +1,8 @@
 """Load and validate data/manifest.yaml, the list of documents.
 
 What: turns the YAML file into a list of `DocumentEntry` objects, and refuses
-a manifest with mistakes in it: a missing field, an unknown language, a
-duplicated id, a path outside the department folder, no access group...
+a manifest with mistakes in it: a missing field, a malformed language code,
+a duplicated id, a path outside the department folder, no access group...
 
 Why: the manifest decides who may read each document (`allowed_groups`).
 A typo there is an access-control bug, so we want it to fail loudly at load
@@ -24,7 +24,9 @@ class DocumentEntry(BaseModel):
     title: str = Field(min_length=1)
     path: str  # relative to data/raw/, always "<department>/<file>"
     department: str = Field(pattern=SLUG)
-    language: Literal["en", "fr", "ar"]
+    # Declared language, as a two-letter code ("en", "fr"...). Which languages
+    # are indexed is a setting (supported_languages), checked by app.ingest.
+    language: str = Field(pattern=r"^[a-z]{2}$")
     allowed_groups: list[str] = Field(min_length=1)
     source_url: str
     manual_download: bool = False

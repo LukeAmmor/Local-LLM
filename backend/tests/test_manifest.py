@@ -25,7 +25,7 @@ def test_valid_entry():
     {"path": "procurement/policy.pdf"},  # not in its department folder
     {"path": "hr/../secret.pdf"},  # escapes data/raw
     {"path": "hr/policy.exe"},  # unsupported type
-    {"language": "de"},  # unsupported language
+    {"language": "French"},  # not a two-letter language code
     {"allowed_groups": []},  # nobody could read it
     {"allowed_groups": ["HR"]},  # group names are lowercase
     {"id": "Bad Id"},  # ids are slugs

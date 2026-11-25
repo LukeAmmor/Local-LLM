@@ -6,7 +6,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-from app.parsing import heading_levels, parse_document, repair_arabic_span
+from app.parsing import heading_levels, parse_document
 
 
 def make_pdf(path):
@@ -108,27 +108,3 @@ def test_heading_levels_group_close_sizes():
     assert levels[24.0] == 1
     assert levels[16.0] == levels[15.5] == 2  # less than 1 point apart
     assert levels[13.0] == 3 and levels[10.0] == 3  # capped at level 3
-
-
-def char(c: str, x0: float, x1: float) -> dict:
-    return {"c": c, "bbox": (x0, 0.0, x1, 10.0)}
-
-
-def test_arabic_lam_alef_ligature_is_swapped_back():
-    # "والأحكام" extracted as و ا أ(zero width) ل ح ك ا م
-    chars = [char("و", 26, 32), char("ا", 25, 28), char("أ", 25.78, 25.78), char("ل", 19.9, 25.78),
-             char("ح", 13, 19), char("ك", 9, 13), char("ا", 6, 9), char("م", 2, 6)]
-    assert repair_arabic_span(chars) == "والأحكام"
-
-
-def test_normal_alef_lam_is_not_touched():
-    # "الشراء": the article ا ل with a normal-width alef must stay as it is.
-    chars = [char(c, 50 - 5 * i, 54 - 5 * i) for i, c in enumerate("الشراء")]
-    assert repair_arabic_span(chars) == "الشراء"
-
-
-def test_arabic_leading_punctuation_moves_to_the_end():
-    chars = [char(c, 0, 4) for c in ".في هذا الطلب"]
-    assert repair_arabic_span(chars) == "في هذا الطلب."
-    latin = [char(c, 0, 4) for c in ". Next"]
-    assert repair_arabic_span(latin) == ". Next"  # only Arabic segments are changed

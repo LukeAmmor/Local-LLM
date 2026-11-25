@@ -57,7 +57,13 @@ class Settings(BaseSettings):
     # without Windows paging GPU memory to RAM. One question embeds in ~0.3 s
     # on the CPU, but the reranker needs the GPU (~50 s for 30 passages on CPU).
 
+    # --- Languages ---
+    # Documents detected as another language are skipped by ingestion
+    # (app.langdetect knows English and French only).
+    supported_languages: list[str] = ["en", "fr"]
+
     # --- Embedding model (dense + sparse vectors) ---
+    # bge-m3 is multilingual: an English question finds French passages and back.
     embed_model: str = "BAAI/bge-m3"
     embed_device: Device = "cpu"
     embed_fp16: bool = True  # half precision halves memory; only used on cuda

@@ -6,11 +6,9 @@ Steps, in order (`clean_blocks`):
      pages, e.g. "Procurement Regulations for IPF Borrowers" or "Page 3 of 11".
      (Not "half of the pages": long documents change their running header
      with each chapter.) Lone page numbers near the top or bottom are removed too.
-  2. Normalise Unicode (NFKC): ligatures such as "ﬁ" become "fi", and Arabic
-     "presentation forms" (special glyph codes) become normal letters.
-     Invisible characters are removed: soft hyphens, zero-width characters,
-     bidirectional control marks, and the Arabic tatweel "ـ" (a stretching
-     stroke used only for justification).
+  2. Normalise Unicode (NFKC): typographic ligatures such as "ﬁ" become "fi",
+     non-breaking spaces become normal spaces. Invisible characters are
+     removed: soft hyphens, zero-width characters, bidirectional control marks.
   3. Join words split by a hyphen at the end of a line ("infor-\\nmation" ->
      "information") when the next line starts with a lowercase letter. When
      it starts with a capital or a digit ("Jean-\\nPierre", "COVID-\\n19"),
@@ -36,9 +34,10 @@ from app.parsing import Block
 HEADER_FOOTER_ZONE = 0.08  # top and bottom 8% of the page height
 MIN_REPEAT_PAGES = 3  # a margin text on at least this many pages is a header/footer
 
-INVISIBLE = re.compile("[­​-‏‪-‮⁠⁦-⁩﻿ـ]")
+# Invisible characters: soft hyphen, zero-width characters, bidi marks, byte order mark.
+INVISIBLE = re.compile("[\u00AD\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]")
 # Page numbers after repeat_key() (digits already replaced by "#"): "#", "page # of #", "iv"...
-PAGE_NUMBER = re.compile(r"^(page|p\.|صفحة)?\s*(#+|[ivxlc]{1,6})(\s*(/|of|sur|de|من)\s*#+)?$", re.IGNORECASE)
+PAGE_NUMBER = re.compile(r"^(page|p\.)?\s*(#+|[ivxlc]{1,6})(\s*(/|of|sur|de)\s*#+)?$", re.IGNORECASE)
 DOT_LEADER = re.compile(r"\s*(?:\.\s*){4,}")  # 4+ dots, with the spaces around them
 LONE_ROMAN_NUMERAL = re.compile(r"^[IVX]{1,5}$")
 HYPHEN_AT_LINE_END = re.compile(r"(\w)-\n\s*(?=[a-zà-öø-ÿœæç])")

@@ -1,42 +1,41 @@
 # Document corpus
 
-The Phase 1 corpus: public documents from international organisations,
-assigned to three departments plus a public area, in English, French and
-Arabic. The list lives in `data/manifest.yaml`. The files are not in the
-repository (`data/raw/` is gitignored): `uv run python -m app.download`
-fetches them, except the ones marked `manual_download: true`. A document
-with `exclude:` stays in the manifest as a documented finding: the download
-check still examines it, but it is never indexed.
+The corpus: public documents from international organisations, assigned to
+three departments plus a public area, in **English and French**. The list
+lives in `data/manifest.yaml`. The files are not in the repository
+(`data/raw/` is gitignored): `uv run python -m app.download` fetches them,
+except the ones marked `manual_download: true`. A document with `exclude:`
+stays in the manifest as a documented finding: it is never indexed.
 
 | id | department | language | format | pages | chunks |
 |---|---|---|---|---|---|
 | wb-procurement-regs-en | procurement | en | PDF | 154 | 293 |
 | wb-procurement-regs-fr | procurement | fr | DOCX | none (cited by section) | 254 |
-| wbg-po-terms-ar | procurement | ar + en | PDF | 9 | 39 |
 | anssi-hygiene-en | it-security | en | PDF | 72 | 57 |
 | anssi-hygiene-fr | it-security | fr | PDF | 72 | 64 |
 | anssi-ransomware-fr | it-security | fr | PDF | 21 | 39 |
 | itcilo-conduct-en | hr | en | PDF | 11 | 23 |
 | ilo-harassment-policy-en | hr | en | PDF | 4 | 8 |
-| ilo-c190-brief-ar | hr | ar | PDF | 6 | excluded: damaged text (see below) |
-| ilo-job-evaluation-ar | hr | ar | PDF | - | file not placed yet |
 | wb-anticorruption-en | public | en | PDF | 7 | 14 |
 | wb-anticorruption-guide-fr | public | fr | PDF | 35 | 37 |
+| **total** | | 393 en + 396 fr chunks | | | **789** |
+| wbg-po-terms-ar | procurement | ar + en | PDF | 9 | excluded: Arabic dropped |
+| ilo-c190-brief-ar | hr | ar | PDF | 6 | excluded: Arabic dropped |
+| ilo-job-evaluation-ar | hr | ar | PDF | 108 | excluded: Arabic dropped |
 
 Chunks: at most 400 bge-m3 tokens, 15% overlap (settings of Phase 1).
 
-## Realistic cases kept on purpose
+## Cross-lingual cases
 
-**A bilingual document (wbg-po-terms-ar).** The World Bank Group purchase
-order terms "in Arabic" are in fact bilingual: each page has the English text
-in one column and the Arabic translation in the other, and the PDF stores them
-paragraph by paragraph. The document states that the English version governs.
-Internal documents often mix languages like this. Language is therefore
-detected for each chunk, not only for each document: 25 chunks are mostly
-English and 14 mostly Arabic. Because bge-m3 is cross-lingual, an Arabic
-question and an English question both retrieve a mix of the English and
-Arabic chunks of the same clause (measured on 4 questions): the question's
-language does not decide which version comes back.
+The embedder, bge-m3, is multilingual: a French question can find an
+English passage and the other way round.
+
+**A French question about an English document.** The only harassment
+policy is in English (ILO Circular 543). The French question "Quelle est la
+procédure en cas de harcèlement sexuel au travail ?" finds it in the top 5
+with dense vectors. Sparse (keyword) vectors alone fail on it: French and
+English words do not match. This is a test case for Phase 5, and a reason
+for hybrid search.
 
 **The same content in two languages.** The ANSSI hygiene guide exists in
 English and French (same edition: version 2.0, September 2017). A question
@@ -47,43 +46,63 @@ can retrieve both versions; bge-m3 places them close to each other.
 French. The two can differ, and the citation tells which edition an answer
 comes from.
 
-## Extraction quality
+## Why Arabic was dropped from scope
 
-**Arabic PDF (wbg-po-terms-ar).** The Arabic text comes out in the right
-order. Two extraction errors are repaired in `app.parsing.repair_arabic_span`:
-  - the lam-alef ligature "لا" comes out with its two letters swapped
-    ("واألحكام" instead of "والأحكام"): 202 repairs;
-  - punctuation at the end of an Arabic segment comes out at its start: 136
-    lines, 3 left.
+The project started with three languages: English, French and Arabic.
+Arabic was dropped after Phase 1, for two reasons measured on real files.
 
-Remaining, minor for search: numbers inside Arabic sentences come out out of
-place ("( ثلاثين30 يوما" instead of "ثلاثين (30) يوما"), and a few words are
-split ("مجموع ة").
-
-**Arabic PDFs with unusable text: two findings.** Text extraction from
-Arabic PDFs depends on how the PDF was made: a PDF shows glyphs (shapes), and
+**1. Most Arabic PDFs gave broken text.** A PDF shows glyphs (shapes), and
 the text comes from a table inside the PDF that maps glyphs back to letters.
-When that table is missing or wrong, the page looks perfect but the
-extracted text is broken. Two Arabic HR documents failed the download check
-this way. Such files are replaced, not repaired.
+When that table is missing or wrong, the page looks perfect on screen but
+the extracted text is broken. Three Arabic HR documents failed this way:
   1. An ILO HIV/AIDS guide for employers (2008) was made with QuarkXPress
      and old Mac Arabic fonts ("AXt"). These fonts have no Unicode mapping
      at all, so the text comes out as Latin symbols: "πª©dG" instead of
-     "العمل", with 0 Arabic letters out of 11,185 (flag "no Arabic
-     letters"). It was removed from the corpus.
-  2. Its replacement, the ILO brief on Convention 190 (ilo-c190-brief-ar,
-     2023), was exported to PDF by Word with the Calibri font. The text is
-     Unicode, but letter pairs drawn as one glyph (ligatures) come out
-     wrong: "في" is extracted as "ف" 83 times out of 86, "على" as "عىل",
-     "إلى" as "إىل", "التي" as "النر", "القوانين" as "القوانير" (flag "damaged
-     Arabic letters"). The damaged endings cannot be repaired by rule ("ير"
-     stands for "ين", "يز"...). It stays in the manifest with `exclude:` so
-     the finding can be reproduced, and is not indexed.
+     "العمل", with 0 Arabic letters out of 11,185. Removed from the corpus.
+  2. The ILO brief on Convention 190 (ilo-c190-brief-ar, 2023) was exported
+     to PDF by Word with the Calibri font. The text is Unicode, but letter
+     pairs drawn as one glyph (ligatures) come out wrong: "في" is extracted
+     as "ف" 83 times out of 86, "على" as "عىل", "إلى" as "إىل", "التي" as
+     "النر", "القوانين" as "القوانير". The damaged endings cannot be repaired
+     by rule ("ير" stands for "ين", "يز"...).
+  3. An ILO guide to gender-neutral job evaluation (ilo-job-evaluation-ar,
+     2011, 108 pages) uses the same "AXt" fonts as file 1, this time with a
+     partial and wrong Unicode mapping: "في" comes out as "يف" 882 times
+     (correct: 10), "المرأة" as "املراأة", "أن" as "اأن", "الرئيسية" as
+     "الرئيùشية", and the cover titles as Latin symbols ("õjõ©J").
 
-By contrast, wbg-po-terms-ar (also made with Word, but another font) has
-none of these problems: "في" appears 80 times and a lone "ف" never does.
-The backup Arabic HR document, ilo-job-evaluation-ar, is pending: its file is
-not placed yet.
+The damage depends on the tool and fonts that produced the PDF, not on the
+publisher: the same organisation (ILO) produced all three.
+
+**2. The one usable Arabic document needed repair code.** The World Bank
+Group purchase order terms (wbg-po-terms-ar, 2025) were bilingual: English
+in one column, the Arabic translation in the other. Its Arabic text came out
+in the right order, but with two systematic extraction errors, which the
+parser repaired (code removed when Arabic was dropped):
+  - The lam-alef ligature "لا" came out with its two letters swapped
+    ("واألحكام" instead of "والأحكام"). PyMuPDF splits the ligature glyph
+    into an alef of zero width followed by a lam; the zero width was the
+    marker to detect it and swap the two letters back: 202 repairs.
+  - Punctuation at the end of an Arabic segment came out at its start
+    (".في هذا الطلب"); it was moved back to the end: 136 lines, 3 left.
+
+Still unrepaired: numbers inside Arabic sentences out of place
+("( ثلاثين30 يوما" instead of "ثلاثين (30) يوما"), and a few split words
+("مجموع ة").
+
+The Phase 1 download check also had Arabic-specific flags ("no Arabic
+letters", "damaged Arabic letters": many lone "ف" or "يف" and few "في"); they
+found the three broken files above and were removed with Arabic. All this
+code is in the git history (commit 8ab35ef).
+
+**The decision.** Supporting Arabic meant writing and explaining
+font-specific repair code, checking every new file by hand, and still
+accepting damaged text. English and French text extracts cleanly. The
+three Arabic files stay in the manifest with `exclude:`, and the language
+detector knows English and French only: a document detected as another
+language is skipped by ingestion with a message.
+
+## Extraction quality (English and French)
 
 **French DOCX (wb-procurement-regs-fr).**
   - Headings come from Word's outline levels, the setting that builds Word's

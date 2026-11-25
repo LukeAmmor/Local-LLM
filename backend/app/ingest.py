@@ -8,13 +8,16 @@ Usage:
     uv run python -m app.ingest --no-header              # experiment: no "Title > Section" header
     uv run python -m app.ingest --force                  # re-index even if nothing changed
 
-For each document of data/manifest.yaml (except those with `exclude:`, kept
-in the manifest only as documented findings, e.g. an Arabic PDF whose text
-comes out damaged):
+For each document of data/manifest.yaml:
+  0. A document with `exclude:` (kept in the manifest only as a documented
+     finding) is not indexed; chunks indexed before are removed.
   1. Compute the SHA-256 fingerprint of the file. If the registry (SQLite)
      says this exact file was already indexed in this collection with the
      same model and chunking settings, skip it. Re-running is idempotent.
-  2. Parse (app.parsing), clean (app.cleaning), chunk (app.chunking).
+  2. Parse (app.parsing) and clean (app.cleaning). If the language detected
+     on the whole text is not in the setting `supported_languages` (English
+     and French), skip the document with a message; chunks indexed before
+     are removed. Then chunk (app.chunking).
   3. Embed every chunk with bge-m3: one dense + one sparse vector (app.embeddings).
   4. Delete the document's old points from Qdrant, insert the new ones
      (app.vectorstore), and update the registry (app.db).
@@ -42,8 +45,9 @@ from sqlmodel import Session
 from app.chunking import Chunk, HFTokenCounter, chunk_document
 from app.cleaning import clean_blocks
 from app.config import Settings, get_settings
-from app.db import Document, find_indexed, get_engine, record_indexed, save_document
+from app.db import Document, find_indexed, forget_document, get_engine, record_indexed, save_document
 from app.embeddings import Embedder, load_tokenizer
+from app.langdetect import detect_language
 from app.manifest import DocumentEntry, load_manifest
 from app.parsing import parse_document
 from app.vectorstore import count_points, delete_document, ensure_collection, upsert_chunks
@@ -55,6 +59,16 @@ def sha256_of(path: Path) -> str:
         for block in iter(lambda: f.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def remove_from_index(qdrant: QdrantClient, engine, collection: str, doc_id: str) -> int:
+    """Delete a document's chunks from Qdrant and the registry. Return how many chunks were removed."""
+    removed = count_points(qdrant, collection, doc_id)
+    if removed:
+        delete_document(qdrant, collection, doc_id)
+    with Session(engine) as session:
+        forget_document(session, doc_id, collection)
+    return removed
 
 
 def unload_ollama_models(ollama_url: str) -> None:
@@ -96,7 +110,7 @@ def write_chunks_jsonl(path: Path, entry: DocumentEntry, chunks: list[Chunk]) ->
 
 
 def main() -> int:
-    sys.stdout.reconfigure(encoding="utf-8")  # documents contain Arabic; Windows consoles default to cp1252
+    sys.stdout.reconfigure(encoding="utf-8")  # messages may contain any Unicode; Windows consoles default to cp1252
     s: Settings = get_settings()
     p = argparse.ArgumentParser(description="Index the manifest documents into Qdrant.")
     p.add_argument("--only", nargs="+", metavar="DOC_ID", help="only these document ids")
@@ -124,10 +138,18 @@ def main() -> int:
 
     print(f"Collection: {args.collection} | settings: {settings_key}" + (" | DRY RUN" if args.dry_run else ""))
     rows = []
+    notes = []  # one explanation line per document that is not indexed
+
+    def removed_note(doc_id: str) -> str:
+        """Remove chunks indexed before (not in a dry run) and say so."""
+        removed = 0 if args.dry_run else remove_from_index(qdrant, engine, args.collection, doc_id)
+        return f" ({removed} chunks indexed before were removed)" if removed else ""
+
     for entry in entries:
         path = entry.file_path(s.raw_dir)
         if entry.exclude:  # kept in the manifest as a documented finding, never indexed
             rows.append((entry.id, "excluded", None, []))
+            notes.append(f"Excluded {entry.id}: {entry.exclude}{removed_note(entry.id)}")
             continue
         if not path.exists():
             rows.append((entry.id, "missing", None, []))
@@ -143,6 +165,12 @@ def main() -> int:
 
         parsed = parse_document(path)
         blocks = clean_blocks(parsed.blocks)
+        language = detect_language("\n".join(b.text for b in blocks))
+        if language not in s.supported_languages:
+            rows.append((entry.id, "skipped", None, []))
+            notes.append(f"Skipped {entry.id}: detected language '{language}' is not supported "
+                         f"(supported: {', '.join(s.supported_languages)}){removed_note(entry.id)}")
+            continue
         chunks = chunk_document(blocks, counter, entry.title, entry.language,
                                 args.chunk_size, args.overlap, add_header)
         if not chunks:
@@ -181,9 +209,8 @@ def main() -> int:
     missing = [r[0] for r in rows if r[1] == "missing"]
     if missing:
         print(f"Missing files (run `python -m app.download`): {', '.join(missing)}")
-    for entry in entries:
-        if entry.exclude:
-            print(f"Excluded {entry.id}: {entry.exclude}")
+    for note in notes:
+        print(note)
     return 0
 
 

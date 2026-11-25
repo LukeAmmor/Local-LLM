@@ -5,7 +5,9 @@
 #   title            shown in citations
 #   path             file location relative to data/raw/ (always <department>/<file>)
 #   department       owning department: procurement | hr | it-security | public
-#   language         declared language of the document: en | fr | ar
+#   language         declared language of the document (two-letter code). Only
+#                    English and French are indexed (setting supported_languages);
+#                    Arabic was dropped from scope (docs/corpus.md).
 #   allowed_groups   groups allowed to read it; "public" = everyone
 #   source_url       where the file comes from (direct file, or the source page)
 #   manual_download  true when the file cannot be downloaded by the script
@@ -45,6 +47,8 @@ documents:
     language: ar
     allowed_groups: [procurement]
     source_url: https://thedocs.worldbank.org/en/doc/42388b5f7332b013a93885cb4b327721-0180012025/original/WBG-Terms-and-Conditions-Goods-and-Services-Arabic-2025.pdf
+    # Bilingual EN/AR; its Arabic text needed repair code (docs/corpus.md).
+    exclude: "Arabic dropped from scope"
     split:
 
   # ---------------- it-security ----------------
@@ -106,7 +110,8 @@ documents:
     allowed_groups: [hr]
     source_url: "https://researchrepository.ilo.org/esploro/outputs/encyclopediaEntry/اتفاقية-منظمة-العمل-الدولية-رقم-190/995653414502676"
     manual_download: true
-    exclude: "damaged Arabic letters (PDF exported by Word with Calibri): 'في' extracted as 'ف'"
+    # Also: damaged Arabic letters (PDF exported by Word with Calibri), docs/corpus.md.
+    exclude: "Arabic dropped from scope"
     split:
 
   - id: ilo-job-evaluation-ar
@@ -117,6 +122,8 @@ documents:
     allowed_groups: [hr]
     source_url: https://www.ilo.org/ar/publications/promoting-equity-gender-neutral-job-evaluation-equal-pay-step-step-guide
     manual_download: true
+    # Also: damaged Arabic letters (old AXt fonts, partial Unicode mapping), docs/corpus.md.
+    exclude: "Arabic dropped from scope"
     split:
 
   # ---------------- public ----------------

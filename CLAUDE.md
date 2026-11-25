@@ -69,19 +69,29 @@ silently swap the CUDA build for the CPU one.
   bound to 127.0.0.1.
 - Ports 80, 8000 and 8080 are taken on the dev machine by other Docker stacks:
   backend default port will be 8100.
-- Language detection: small custom heuristic (Arabic script ratio, then
-  English vs French stop words). No package.
+- Scope: English and French only (decided 2026-11-25, after Phase 1). Arabic
+  was dropped: most Arabic PDFs gave broken text and the usable one needed
+  font-specific repair code (docs/corpus.md, "Why Arabic was dropped"). The
+  3 Arabic files stay in the manifest with `exclude: "Arabic dropped from
+  scope"`. The Arabic repair code and download checks are in git history (8ab35ef).
+- bge-m3 stays the embedder: multilingual, so French questions find English
+  passages and back (cross-lingual search between the two languages).
+- Language detection: small custom heuristic, no package. Less than half Latin
+  letters -> "other"; otherwise English vs French stop-word vote ("unknown" on
+  a tie or no letters). Setting `supported_languages` (default ["en", "fr"]):
+  `app.ingest` skips a document whose detected language is not in it, with a
+  message, and removes its old chunks. Language is also stored per chunk.
 - Chunk header ("Title > Section" prepended to the embedded text, not shown):
   config switch, and an experiment (with vs without).
 - DOCX: no pages at all, cited by section; in the UI too, DOCX citations show
   the section, not a page. Word's saved page-break markers were measured
   unreliable (145 markers for 151 pages, up to 8 pages of drift on
   wb-procurement-regs-fr). Page images only for PDFs.
-- Arabic PDFs are screened by `app.download`: "no Arabic letters" (fonts without
-  Unicode mapping, e.g. old Mac "AXt" fonts) and "damaged Arabic letters"
-  (Word + Calibri exports: "في" -> "ف", "على" -> "عىل"). Such files are replaced,
-  not repaired. A failed file can stay in the manifest with `exclude: <reason>`:
-  still checked by `app.download`, never indexed by `app.ingest`.
+- Manifest field `exclude: <reason>`: the document stays in the manifest as a
+  documented finding, is still checked by `app.download`, never indexed by
+  `app.ingest` (which removes chunks indexed before, from Qdrant and SQLite).
+- Manifest `language` is any two-letter code; what gets indexed is decided by
+  the setting `supported_languages`, not by the manifest schema.
 - Manifest field `manual_download: true` for documents whose URL is a web page;
   the student places those files by hand.
 - Phase 6: sentence-transformers fine-tunes only the dense part of bge-m3.
@@ -114,10 +124,8 @@ silently swap the CUDA build for the CPU one.
   chapter-title boxes after the first paragraphs of chapter pages.
 - Headings: short blocks with font >= body + 1 pt, or bold. Levels by font size
   (sizes < 1 pt apart share a level, max 3). Adjacent same-level headings merge.
-- Arabic PDF repair (parsing.repair_arabic_span): the lam-alef ligature comes out
-  swapped with a zero-width alef -> swap back; leading punctuation of Arabic
-  segments -> moved to the end. On wbg-po-terms-ar: 202 ligatures fixed, 136 -> 3
-  misplaced punctuation marks. Remaining: digits/parentheses order inside Arabic.
+- PDF text is read with PyMuPDF's "dict" mode (blocks -> lines -> spans with
+  font size and bold flag); no per-character extraction is needed.
 - Headers/footers: text in the top/bottom 8% repeated on >= 3 pages (digits
   ignored), plus lone page numbers (digits or roman). Dot leaders collapsed.
 - Chunking: sentences packed up to chunk_size; a heading cuts the chunk unless it
@@ -127,8 +135,6 @@ silently swap the CUDA build for the CPU one.
   decoration); blocks that are only a roman numeral are dropped in cleaning.
 - DOCX headings: Word outline level (paragraph, then style chain), then style
   name. Custom styles ("Style2", "REGs H1") are headings through outline levels.
-- wbg-po-terms-ar is bilingual EN/AR (two columns): kept on purpose as a
-  realistic mixed-language case (docs/corpus.md); language is per chunk.
 - `manual_download: true` also for URLs that refuse scripts (403) or are dead (404).
 - Corpus notes and extraction quality per document: docs/corpus.md.
 
@@ -136,9 +142,12 @@ silently swap the CUDA build for the CPU one.
 - Before recording the demo (end of Phase 7): re-run the default VRAM
   measurement with OBS open AND recording, and check there is no paging:
   `uv run python scripts/measure_vram.py --embed-device cpu --rerank-device cuda --num-ctx 4096 --label obs-recording`
-- Test set idea (Phase 5): an Arabic question about harassment at work must
-  retrieve both the Arabic ILO brief on Convention 190 (hr, Arabic) and the
-  English ILO harassment policy (ilo-harassment-policy-en): cross-lingual recall.
+- Test set idea (Phase 5): a French question about harassment at work must
+  retrieve the English ILO harassment policy (ilo-harassment-policy-en):
+  cross-lingual recall. Checked after Phase 1: dense finds it (top 5), sparse
+  alone does not ("Quelle est la procédure en cas de harcèlement sexuel au travail ?").
+- `scripts/measure_vram.py` still contains an Arabic sample passage: left as
+  it is so the Phase 0 VRAM measurements stay comparable.
 
 ## Machine notes (dev)
 RTX 5060 8 GB (Blackwell, compute capability 12.0), about 2 GB of VRAM used by

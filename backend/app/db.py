@@ -74,3 +74,17 @@ def save_document(session: Session, document: Document) -> None:
     """Insert or update the registry row of a document."""
     session.merge(document)
     session.commit()
+
+
+def forget_document(session: Session, doc_id: str, collection: str) -> None:
+    """Remove a document from the registry of one collection, and from
+    `documents` once no collection holds it any more (it is no longer indexed)."""
+    row = find_indexed(session, doc_id, collection)
+    if row:
+        session.delete(row)
+        session.commit()
+    still_indexed = session.exec(select(IndexedDocument).where(IndexedDocument.doc_id == doc_id)).first()
+    document = session.get(Document, doc_id)
+    if document and not still_indexed:
+        session.delete(document)
+        session.commit()
