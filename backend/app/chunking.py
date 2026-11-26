@@ -100,6 +100,12 @@ class Chunk:
     language: str
 
 
+def with_header(title: str, section: str, text: str) -> str:
+    """The text preceded by its "Title > Section" header (embedder input, also reranker input)."""
+    header = f"{title} > {section}" if section else title
+    return f"{header}\n\n{text}"
+
+
 def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in SENTENCE_END.split(text) if s and s.strip()]
 
@@ -173,12 +179,11 @@ def chunk_document(blocks: list[Block], counter: TokenCounter, title: str, doc_l
         content = [p for p in pieces if not p.is_heading] or pieces
         section = content[0].section
         pages = [p.page for p in pieces if p.page is not None]
-        header = f"{title} > {section}" if section else title
         language = detect_language(text)
         chunks.append(Chunk(
             index=index,
             text=text,
-            embed_text=f"{header}\n\n{text}" if add_header else text,
+            embed_text=with_header(title, section, text) if add_header else text,
             section=section,
             page_start=min(pages) if pages else None,
             page_end=max(pages) if pages else None,

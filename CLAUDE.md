@@ -38,6 +38,8 @@ uv run python -m app.download                 # download + check the manifest do
 uv run python -m app.ingest                   # parse, clean, chunk, embed, store (skips unchanged docs)
 uv run python -m app.ingest --dry-run         # chunks only -> data/processed/chunks/<doc_id>.jsonl
 uv run python -m app.ingest --force           # REQUIRED after changing parsing/cleaning/chunking code
+uv run python -m app.ask "question" --groups hr                    # Phase 2: answer with citations
+uv run python -m app.ask "question" --groups hr --mode sparse --no-rerank --no-generate --verbose
 uv run pytest
 ```
 The ingestion registry is keyed on the file hash + settings, not on our code:
@@ -53,6 +55,10 @@ silently swap the CUDA build for the CPU one.
   - ingestion pipeline: `manifest` -> `download` -> `parsing` -> `cleaning` ->
     `chunking` (+ `langdetect`) -> `embeddings` -> `vectorstore` (Qdrant) + `db` (SQLite registry);
     `ingest` is the CLI that runs it
+  - question pipeline: `retrieval` (access filter, dense/sparse search, RRF) ->
+    `rerank` -> `generation` (prompt, Ollama, citation check); `pipeline`
+    (`RagPipeline`, reused by the API and the evaluation) ties them together;
+    `ask` is the CLI
 - `backend/tests/`: pytest
 - `scripts/`: one-off environment and measurement scripts
 - `data/manifest.yaml`: list of documents; `data/raw/`: downloaded files (gitignored)
@@ -136,6 +142,32 @@ silently swap the CUDA build for the CPU one.
 - DOCX headings: Word outline level (paragraph, then style chain), then style
   name. Custom styles ("Style2", "REGs H1") are headings through outline levels.
 - `manual_download: true` also for URLs that refuse scripts (403) or are dead (404).
+- Phase 2 retrieval: the access filter (allowed_groups MatchAny user groups) is
+  inside EVERY Qdrant query; `check_access` re-checks in Python (tripwire). The
+  public group is always added to the user's groups. Hybrid = dense top 30 +
+  sparse top 30 fused by our own RRF (k=60), so each candidate keeps its dense
+  and sparse ranks (shown by `--verbose`). Then rerank, then top 5 to the LLM.
+  Switches: `--mode dense|sparse|hybrid`, `--rerank/--no-rerank`, `--no-generate`.
+- The reranker reads "Title > Section" + text when chunk_add_header is on
+  (`chunking.with_header`, same text as the embedder).
+- Generation: fixed "I don't know" sentence per language (says "the documents
+  you have access to"); the question's language is detected and the prompt says
+  "Write your answer in French/English"; "unknown" -> "in the language of the
+  question". Temperature 0. Ollama `"truncate": false`: by default Ollama cuts an
+  over-long prompt SILENTLY (measured: 5,126 tokens cut to 2,050 with num_ctx 4096);
+  with false it returns HTTP 400. If no passage is found, the LLM is not called.
+- Citations: `[n]`, `[1][3]`, `[1, 3]`; invalid numbers are removed from the
+  answer and reported. The pipeline result keeps ALL passages given to the LLM,
+  each with `cited` true/false (RAGAS needs them in Phase 5); the CLI (and later
+  the UI) shows only the cited ones.
+- `RagPipeline` warms the models up at load time (first runs are 3-5x slower),
+  so per-question timings are comparable. Ollama reuses a cached identical
+  prompt start: the prompt-reading speed is only meaningful for a new question.
+- Rerank scores of the passage holding the answer can be very low across
+  languages: 0.019 (French question, English ILO passage: "six mois") and 0.058
+  (English question, French ANSSI passage), while other pairs score 0.85-1.0. A
+  score threshold for "I don't know" would reject right answers. Not used;
+  revisit with the Phase 5 test set.
 - Corpus notes and extraction quality per document: docs/corpus.md.
 
 ## Reminders
@@ -144,8 +176,17 @@ silently swap the CUDA build for the CPU one.
   `uv run python scripts/measure_vram.py --embed-device cpu --rerank-device cuda --num-ctx 4096 --label obs-recording`
 - Test set idea (Phase 5): a French question about harassment at work must
   retrieve the English ILO harassment policy (ilo-harassment-policy-en):
-  cross-lingual recall. Checked after Phase 1: dense finds it (top 5), sparse
-  alone does not ("Quelle est la procédure en cas de harcèlement sexuel au travail ?").
+  cross-lingual recall. "Quelle est la procédure en cas de harcèlement sexuel au
+  travail ?" (Phase 2): for a user with ALL groups, sparse alone misses it (top 5 =
+  French it-security/procurement passages), hybrid + rerank gives 5/5 ILO
+  passages. For hr + public only, sparse finds it at rank 1: the access filter
+  removes the competing French documents. Run this test with all groups.
+- Access test (Phase 2): "Dans quel délai dois-je déposer une plainte écrite pour
+  harcèlement sexuel ?" -> hr: "six mois [n]"; procurement: "Je ne sais pas...".
+- VRAM during Phase 2: the desktop apps (Steam, Wallpaper Engine, Discord...)
+  varied between about 1.0 and 1.75 GB within minutes, and prompt reading
+  dropped to 205-447 tokens/s (paging) in 2 of 12 runs, once even without the
+  reranker. Close them for the demo.
 - `scripts/measure_vram.py` still contains an Arabic sample passage: left as
   it is so the Phase 0 VRAM measurements stay comparable.
 

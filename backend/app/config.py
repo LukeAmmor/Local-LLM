@@ -78,10 +78,20 @@ class Settings(BaseSettings):
     chunk_overlap_ratio: float = 0.15  # share of a chunk repeated at the start of the next one
     chunk_add_header: bool = True  # prepend "Title > Section" to the text that is embedded
 
+    # --- Retrieval (question time) ---
+    # dense = meaning, sparse = keywords, hybrid = both merged with RRF.
+    retrieval_mode: Literal["dense", "sparse", "hybrid"] = "hybrid"
+    retrieval_top_k: int = 30  # candidates kept by the search (each search of hybrid returns this many)
+    rrf_k: int = 60  # Reciprocal Rank Fusion constant: score = sum of 1 / (rrf_k + rank)
+    context_passages: int = 5  # passages given to the LLM (best after reranking, or after the search)
+    public_group: str = "public"  # every user may read the documents of this group
+
     # --- Reranker (cross-encoder) ---
+    rerank_enabled: bool = True
     rerank_model: str = "BAAI/bge-reranker-v2-m3"
     rerank_device: Device = "cuda"
     rerank_fp16: bool = True
+    rerank_batch_size: int = 32  # (question, passage) pairs scored at once
     rerank_max_length: int = 1024  # max tokens for one (question, passage) pair
 
     # URLs use 127.0.0.1, not "localhost": on Windows, "localhost" tries IPv6
@@ -93,6 +103,9 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3:8b"
     llm_num_ctx: int = 4096  # context window in tokens; drives the KV cache size in VRAM
     llm_keep_alive: str = "10m"  # how long Ollama keeps the model loaded after a request
+    llm_num_predict: int = 768  # maximum answer length in tokens
+    llm_temperature: float = 0.0  # 0 = always the most likely token: same answer every run (experiments)
+    llm_timeout_s: float = 300.0  # the first request also loads the model
 
     # --- Vector database ---
     qdrant_url: str = "http://127.0.0.1:6333"
