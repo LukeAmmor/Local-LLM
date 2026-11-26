@@ -5,7 +5,7 @@ What: `RagPipeline` loads the models once (embedder, reranker), then
 phases need: the answer, ALL the passages given to the LLM (each marked
 cited or not; the RAGAS context metrics of Phase 5 need all of them), the
 search candidates with their ranks and scores, warnings and timings.
-Used by the CLI (app.ask), later by the API (Phase 3) and the evaluation
+Used by the CLI (app.ask), the API (app.api) and later the evaluation
 (Phase 5).
 
 Steps of `answer()`:
@@ -19,11 +19,18 @@ Steps of `answer()`:
 Each stage can be switched for the experiments: search mode dense / sparse
 / hybrid, reranking on or off, generation on or off (retrieval only).
 
+Streaming: `generate_stream(result)` yields the answer's text pieces while
+the LLM writes them (the API sends them to the browser), then fills `result`.
+`generate()` reads that stream to the end: the CLI and the evaluation use
+the same code as the API. The API calls `answer(..., generate=False)` for
+steps 1-4, then `generate_stream()`.
+
 When no passage is found (e.g. no document for the user's groups), the
 answer is "I don't know" and the LLM is not called.
 """
 
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from qdrant_client import QdrantClient
@@ -31,7 +38,7 @@ from qdrant_client import QdrantClient
 from app.chunking import with_header
 from app.config import Settings
 from app.embeddings import Embedder
-from app.generation import LLMReply, build_messages, chat, check_citations, idk_sentence, is_refusal
+from app.generation import LLMReply, build_messages, chat_stream, check_citations, idk_sentence, is_refusal
 from app.langdetect import detect_language
 from app.manifest import load_manifest
 from app.rerank import Reranker
@@ -122,17 +129,32 @@ class RagPipeline:
         return result
 
     def generate(self, result: Result) -> None:
-        """Step 5: ask the LLM, then check the citations of its answer (fills `result`)."""
+        """Step 5 without streaming: read generate_stream() to the end (fills `result`)."""
+        for _ in self.generate_stream(result):
+            pass
+
+    def generate_stream(self, result: Result) -> Iterator[str]:
+        """Step 5: ask the LLM, yield its answer piece by piece, then check the citations (fills `result`).
+
+        The pieces are the raw LLM text. The checked answer (invalid citations
+        removed) is `result.answer`, set once the stream is finished.
+        """
         s = self.s
         if not result.passages:
             result.answer = idk_sentence(result.language)
             result.warnings.append("no passage found for these groups: the LLM was not called")
+            yield result.answer
             return
 
         start = time.perf_counter()
         messages = build_messages(result.question, [p.payload for p in result.passages], result.language)
-        reply = chat(s.ollama_url, s.llm_model, messages, s.llm_num_ctx, s.llm_num_predict,
-                     s.llm_temperature, s.llm_keep_alive, s.llm_timeout_s)
+        reply = None
+        for kind, value in chat_stream(s.ollama_url, s.llm_model, messages, s.llm_num_ctx, s.llm_num_predict,
+                                       s.llm_temperature, s.llm_keep_alive, s.llm_timeout_s):
+            if kind == "token":
+                yield value
+            else:  # "done": the whole answer and the statistics
+                reply = value
         result.timings["generation"] = time.perf_counter() - start
         result.llm = reply
 

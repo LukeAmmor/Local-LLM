@@ -4,7 +4,12 @@ What:
   - `build_messages(question, passages, language)`: the prompt. A system
     message with the rules, and a user message with the numbered passages
     ("[1] Title, p. 12" + chunk text) followed by the question.
-  - `chat(...)`: one request to Ollama's /api/chat over plain HTTP (httpx).
+  - `chat_stream(...)`: one request to Ollama's /api/chat over plain HTTP
+    (httpx), read as a stream: the answer arrives piece by piece, so the API
+    can show it while the LLM writes (Phase 3). The CLI simply reads the
+    stream to the end.
+  - `load_model(...)`: load the LLM into Ollama now (API startup), so that
+    the first question does not wait for it.
   - `check_citations(answer, n_passages)`: finds the [n] markers in the
     answer, removes the invalid ones (a number that is not a passage), and
     returns which passages are cited.
@@ -30,9 +35,15 @@ Ollama options:
     By default Ollama cuts it silently (measured: a 5,126-token prompt was
     cut to 2,050 tokens with num_ctx 4096, without any error).
   - temperature 0 (setting): the same question gives the same answer.
+  - "keep_alive": how long the model stays loaded after a request. A whole
+    number is sent as a JSON number: Ollama reads a string as a duration that
+    needs a unit, so the string "-1" is refused ("missing unit in duration")
+    while the number -1 keeps the model loaded forever (both measured).
 """
 
+import json
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 import httpx
@@ -104,24 +115,19 @@ def build_messages(question: str, passages: list[dict], language: str) -> list[d
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
-def chat(ollama_url: str, model: str, messages: list[dict], num_ctx: int, num_predict: int,
-         temperature: float, keep_alive: str, timeout: float) -> LLMReply:
-    response = httpx.post(f"{ollama_url}/api/chat", timeout=timeout, json={
-        "model": model,
-        "messages": messages,
-        "think": False,  # qwen3: no reasoning text before the answer
-        "stream": False,  # the whole answer in one response
-        "truncate": False,  # refuse a prompt longer than num_ctx instead of cutting it silently
-        "keep_alive": keep_alive,
-        "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
-    })
-    if response.status_code != 200:
-        raise RuntimeError(f"Ollama refused the request (HTTP {response.status_code}): "
-                           f"{response.json().get('error', response.text)}")
-    data = response.json()
-    ns = 1e9  # Ollama gives durations in nanoseconds
+def keep_alive_value(keep_alive: str) -> str | int:
+    """The keep_alive setting as Ollama needs it: "-1" -> -1 (a number), "10m" -> "10m"."""
+    try:
+        return int(keep_alive)
+    except ValueError:
+        return keep_alive
+
+
+def llm_reply(text: str, data: dict) -> LLMReply:
+    """The answer and the statistics of Ollama's last message (durations are in nanoseconds)."""
+    ns = 1e9
     return LLMReply(
-        text=data["message"]["content"].strip(),
+        text=text,
         prompt_tokens=data.get("prompt_eval_count", 0),
         answer_tokens=data.get("eval_count", 0),
         prompt_seconds=data.get("prompt_eval_duration", 0) / ns,
@@ -129,6 +135,58 @@ def chat(ollama_url: str, model: str, messages: list[dict], num_ctx: int, num_pr
         load_seconds=data.get("load_duration", 0) / ns,
         done_reason=data.get("done_reason", ""),
     )
+
+
+def chat_stream(ollama_url: str, model: str, messages: list[dict], num_ctx: int, num_predict: int,
+                temperature: float, keep_alive: str, timeout: float) -> Iterator[tuple[str, str | LLMReply]]:
+    """Ask the LLM and stream its answer.
+
+    Yields ("token", text piece) while the LLM writes, then ("done", LLMReply)
+    once, with the whole answer and the statistics. Ollama sends one JSON
+    object per line: {"message": {"content": "piece"}, "done": false}, and
+    a last one with "done": true and the token counts and durations.
+    """
+    body = {
+        "model": model,
+        "messages": messages,
+        "think": False,  # qwen3: no reasoning text before the answer
+        "stream": True,  # the answer piece by piece
+        "truncate": False,  # refuse a prompt longer than num_ctx instead of cutting it silently
+        "keep_alive": keep_alive_value(keep_alive),
+        "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
+    }
+    pieces = []
+    with httpx.stream("POST", f"{ollama_url}/api/chat", json=body, timeout=timeout) as response:
+        if response.status_code != 200:
+            response.read()
+            raise RuntimeError(f"Ollama refused the request (HTTP {response.status_code}): "
+                               f"{response.json().get('error', response.text)}")
+        for line in response.iter_lines():
+            if not line.strip():
+                continue
+            data = json.loads(line)
+            if "error" in data:  # an error after the answer started
+                raise RuntimeError(f"Ollama error: {data['error']}")
+            piece = data.get("message", {}).get("content", "")
+            if piece:
+                pieces.append(piece)
+                yield "token", piece
+            if data.get("done"):
+                yield "done", llm_reply("".join(pieces).strip(), data)
+                return
+    raise RuntimeError("Ollama closed the connection before the end of the answer")
+
+
+def load_model(ollama_url: str, model: str, num_ctx: int, keep_alive: str, timeout: float) -> None:
+    """Load the LLM into Ollama's memory now: a request without a prompt only loads the model.
+
+    num_ctx must be the one the questions use: Ollama reloads the model when
+    a request asks for another context size.
+    """
+    response = httpx.post(f"{ollama_url}/api/generate", timeout=timeout, json={
+        "model": model, "keep_alive": keep_alive_value(keep_alive), "options": {"num_ctx": num_ctx},
+    })
+    response.raise_for_status()
 
 
 def check_citations(answer: str, n_passages: int) -> tuple[str, set[int], list[int]]:

@@ -5,8 +5,9 @@ Usage:
     uv run python -m app.ask "..." --groups procurement --mode dense --no-rerank
     uv run python -m app.ask "..." --groups hr --no-generate --verbose   # retrieval only
 
-Users and authentication come in Phase 3: until then the groups are given
-directly. The public group is always added.
+No login here: this is a local tool for the experiments, and the groups are
+given directly. Users, logins and the audit log are in the API (app.api).
+The public group is always added.
 
 Options (the defaults come from the settings, backend/app/config.py):
   --mode dense|sparse|hybrid   search mode (setting retrieval_mode)

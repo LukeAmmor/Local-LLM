@@ -11,10 +11,13 @@ question can find an English passage, and the other way round).
 
 ```powershell
 uv sync                        # Linux CPU server: uv sync --no-default-groups --group cpu
+Copy-Item .env.example .env    # then set RAG_JWT_SECRET and RAG_SEED_PASSWORD in .env
 docker compose up -d qdrant
 uv run python scripts/check_env.py
 uv run python -m app.download  # documents listed in data/manifest.yaml -> data/raw/
 uv run python -m app.ingest    # index them into Qdrant
 uv run python -m app.ask "Que faire en cas de harcèlement ?" --groups hr   # answer with citations
+uv run python -m app.seed      # demo users: hr.officer, hr.manager, procurement.officer, security.officer, admin
+uv run python -m app.api       # API on http://127.0.0.1:8100 (interactive docs: /docs)
 uv run pytest
 ```

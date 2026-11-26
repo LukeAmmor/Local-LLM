@@ -19,6 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/config.py -> parents[2] is the repository root.
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
 
     @property
     def db_path(self) -> Path:
-        """SQLite database: document registry (later also users and audit log)."""
+        """SQLite database: document registry, users and audit log."""
         return self.data_dir / "app.db"
 
     # Default devices come from the Phase 0 measurements (docs/vram-budget.md):
@@ -102,7 +103,10 @@ class Settings(BaseSettings):
     ollama_url: str = "http://127.0.0.1:11434"
     llm_model: str = "qwen3:8b"
     llm_num_ctx: int = 4096  # context window in tokens; drives the KV cache size in VRAM
-    llm_keep_alive: str = "10m"  # how long Ollama keeps the model loaded after a request
+    # How long Ollama keeps the model loaded after a request: a duration ("10m")
+    # or a number of seconds; -1 = forever (the API server, so no question waits
+    # for the model to load), 0 = unload at once.
+    llm_keep_alive: str = "10m"
     llm_num_predict: int = 768  # maximum answer length in tokens
     llm_temperature: float = 0.0  # 0 = always the most likely token: same answer every run (experiments)
     llm_timeout_s: float = 300.0  # the first request also loads the model
@@ -110,6 +114,22 @@ class Settings(BaseSettings):
     # --- Vector database ---
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "kb"  # experiments use other names, e.g. kb_c256
+
+    # --- API server (Phase 3) ---
+    # Ports 80, 8000 and 8080 are taken on the dev machine (other Docker stacks).
+    api_host: str = "127.0.0.1"  # only this machine can connect
+    api_port: int = 8100
+    question_max_chars: int = 1000  # longer questions are refused (they would also fill the LLM context)
+    page_image_dpi: int = 150  # source page images: an A4 page at 150 dpi is 1240 x 1754 pixels
+
+    # --- Authentication (Phase 3) ---
+    # The secret signs the login tokens: whoever knows it can forge a token for
+    # any user. It lives in .env only, never in the repository, and the API
+    # refuses to start without it. SecretStr prints as "**********".
+    jwt_secret: SecretStr = SecretStr("")
+    jwt_expire_minutes: int = 480  # a login is valid for one working day
+    # Password of the demo users created by `python -m app.seed` (.env only).
+    seed_password: SecretStr = SecretStr("")
 
 
 @lru_cache

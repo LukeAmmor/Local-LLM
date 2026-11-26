@@ -3,7 +3,7 @@
 No LLM is called: these are the parts of generation that are plain code.
 """
 
-from app.generation import IDK, build_messages, check_citations, is_refusal, location
+from app.generation import IDK, build_messages, check_citations, is_refusal, keep_alive_value, location
 
 PDF = {"title": "ILO Circular 543", "page_start": 2, "page_end": 2, "section": "Procedures", "text": "Report it."}
 DOCX = {"title": "Règlement", "page_start": None, "page_end": None, "section": "Plan de Passation", "text": "Le plan."}
@@ -55,3 +55,10 @@ def test_unknown_language_offers_both_sentences():
     system, _ = build_messages("Mot de passe ?", [PDF], "unknown")
     assert "in the language of the question" in system["content"]
     assert IDK["en"] in system["content"] and IDK["fr"] in system["content"]
+
+
+def test_keep_alive_numbers_are_sent_as_numbers():
+    # Ollama refuses the string "-1" ("missing unit in duration"); the number -1 means "forever".
+    assert keep_alive_value("-1") == -1
+    assert keep_alive_value("0") == 0
+    assert keep_alive_value("10m") == "10m"

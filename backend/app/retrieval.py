@@ -13,7 +13,8 @@ Access control: `access_filter()` ("allowed_groups contains one of the
 user's groups") is part of EVERY Qdrant query. Qdrant only ranks chunks the
 user may read, so a forbidden chunk is never returned, never fused and never
 given to the LLM. `check_access()` verifies the results again in Python: a
-tripwire that should never fire. The public group is always added to the
+tripwire that should never fire. It uses `can_read()`, the same rule the API
+applies to the document list and the page images. The public group is always added to the
 user's groups (`user_groups()`): public documents are for everyone.
 
 RRF (Cormack et al., 2009): a chunk's fused score is the sum, over the
@@ -94,9 +95,18 @@ def search(client: QdrantClient, collection: str, embedding: Embedding, groups: 
     return ranked[:top_k]
 
 
+def can_read(allowed_groups: list[str], groups: list[str]) -> bool:
+    """The access rule, in Python: a document is readable if it allows at least one of the groups.
+
+    The same rule as access_filter() in Qdrant; the API also uses it for the
+    document list and the page images.
+    """
+    return bool(set(allowed_groups) & set(groups))
+
+
 def check_access(candidates: list[Candidate], groups: list[str]) -> None:
     """Raise if a candidate is not readable by `groups` (the Qdrant filter should make this impossible)."""
     for c in candidates:
-        if not set(c.payload["allowed_groups"]) & set(groups):
+        if not can_read(c.payload["allowed_groups"], groups):
             raise PermissionError(f"access filter failed: chunk {c.payload['chunk_id']} "
                                   f"(allowed {c.payload['allowed_groups']}) returned for groups {groups}")

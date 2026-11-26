@@ -40,6 +40,8 @@ uv run python -m app.ingest --dry-run         # chunks only -> data/processed/ch
 uv run python -m app.ingest --force           # REQUIRED after changing parsing/cleaning/chunking code
 uv run python -m app.ask "question" --groups hr                    # Phase 2: answer with citations
 uv run python -m app.ask "question" --groups hr --mode sparse --no-rerank --no-generate --verbose
+uv run python -m app.seed                     # Phase 3: demo users (needs RAG_SEED_PASSWORD in .env)
+uv run python -m app.api                      # Phase 3: API on 127.0.0.1:8100, docs at /docs (needs RAG_JWT_SECRET)
 uv run pytest
 ```
 The ingestion registry is keyed on the file hash + settings, not on our code:
@@ -59,6 +61,9 @@ silently swap the CUDA build for the CPU one.
     `rerank` -> `generation` (prompt, Ollama, citation check); `pipeline`
     (`RagPipeline`, reused by the API and the evaluation) ties them together;
     `ask` is the CLI
+  - web API: `auth` (passwords, JWT, roles, effective groups; plain functions)
+    -> `api` (FastAPI endpoints, SSE streaming, audit log); `seed` creates the
+    demo users; `db` holds the `users` and `audit_log` tables
 - `backend/tests/`: pytest
 - `scripts/`: one-off environment and measurement scripts
 - `data/manifest.yaml`: list of documents; `data/raw/`: downloaded files (gitignored)
@@ -168,6 +173,55 @@ silently swap the CUDA build for the CPU one.
   (English question, French ANSSI passage), while other pairs score 0.85-1.0. A
   score threshold for "I don't know" would reject right answers. Not used;
   revisit with the Phase 5 test set.
+- Phase 3 API: FastAPI + uvicorn (ONE worker: each worker would load its own
+  models) + PyJWT. FastAPI 0.165 itself pulls in opentelemetry-api. Login takes
+  JSON (no python-multipart); SSE with StreamingResponse (no sse-starlette).
+- Passwords: `hashlib.scrypt` (n=2**14, r=8, p=1, random 16-byte salt, about
+  50 ms and 16 MiB), stored as "scrypt$n$r$p$salt$hash". An unknown username is
+  checked against a dummy hash: same answer AND same timing as a wrong password.
+- JWT HS256 with `algorithms=["HS256"]` fixed (an "alg: none" token is refused);
+  the token holds only sub + exp, role and groups are read from SQLite at every
+  request. `RAG_JWT_SECRET` (>= 32 chars) and `RAG_SEED_PASSWORD` (>= 8, shared
+  by the demo users) live in .env only (SecretStr); the API and the seed refuse
+  to start without them.
+- Roles, one per user: employee; manager = employee + the audit entries of users
+  who share one of the manager's groups (public excluded), based on the asker's
+  OWN groups stored in the entry, so admin questions are not shown to managers;
+  admin = every manifest group + public (the Qdrant filter is never switched
+  off), the whole audit log, /api/admin/*. The audit endpoint is `/api/audit`
+  (admin + manager), filtered in Python (fine for a demo-sized log).
+- Status codes: 401 no/bad/expired token or deleted user; 403 wrong role; 404
+  for a document outside the user's groups, same body as a missing document;
+  DOCX page image -> 400; empty or too long question -> 422.
+- `/api/ask` SSE events: `token` (raw LLM text), `done` (checked answer, which
+  replaces the streamed text; cited sources only; audit_id), `error` (generic
+  message; details in the audit log and the server log). Each question runs in
+  its own thread under a lock (one question at a time) and sends its events
+  through a queue. Measured bug of the first version: a generator holding the
+  lock stays paused at a `yield` when the client leaves, and the next question
+  waited for ever. Now a question always finishes, writes its audit row (status
+  ok/error) and releases the lock, even when the client left.
+- Audit rows keep username, role, own groups and effective groups as they were
+  (no foreign key), every retrieved candidate, the passages with `cited`, the
+  answer, status and timings.
+- Ollama keep_alive: a whole number is sent as a JSON number. The string "-1"
+  is refused ("missing unit in duration"); the number -1 keeps the model loaded
+  for ever (measured). The API preloads the LLM at startup with the questions'
+  num_ctx (another num_ctx would reload it); .env.example sets -1.
+- `generation.chat()` became `chat_stream()`; `RagPipeline.generate()` reads
+  `generate_stream()` to the end: one code path for the CLI, the API and the
+  evaluation.
+- Page images: PyMuPDF `get_pixmap(dpi=page_image_dpi)` (150), `Cache-Control:
+  no-store`. A text page is about 270 KiB, the cover of wb-procurement-regs-en
+  about 2.1 MiB.
+- API tests: FakePipeline = the real search/filter/citation code with an
+  in-memory Qdrant (qdrant-client local mode), identical vectors for every chunk
+  (only the filter decides), fake embedder and LLM, temp SQLite, PDFs generated
+  by PyMuPDF. Checked by breaking the access rule on purpose: the tests fail.
+- Measured on the real stack (Phase 3): API startup about 19 s (models + LLM
+  preload), 7.65 of 8.15 GB VRAM used afterwards. "Délai" question: first token
+  after 3.1 s, done after 3.8 s (hr.officer); "Je ne sais pas" in 2.4 s
+  (procurement.officer).
 - Corpus notes and extraction quality per document: docs/corpus.md.
 
 ## Reminders
@@ -183,10 +237,20 @@ silently swap the CUDA build for the CPU one.
   removes the competing French documents. Run this test with all groups.
 - Access test (Phase 2): "Dans quel délai dois-je déposer une plainte écrite pour
   harcèlement sexuel ?" -> hr: "six mois [n]"; procurement: "Je ne sais pas...".
+- Open point for Phase 5 (found in Phase 2): a BROAD question asked by a user
+  without access to the right documents can get a loosely related answer
+  instead of "I don't know". Example: "Quelle est la procédure en cas de
+  harcèlement sexuel au travail ?" asked as procurement (the precise "délai"
+  question above is refused correctly). A rerank-score cut-off alone will not
+  fix it: right cross-lingual answers also score very low (0.019, 0.058; see
+  the decisions log). Put such questions in the Phase 5 test set (no answer in
+  the user's documents) and measure the refusal rate before choosing a fix.
 - VRAM during Phase 2: the desktop apps (Steam, Wallpaper Engine, Discord...)
   varied between about 1.0 and 1.75 GB within minutes, and prompt reading
   dropped to 205-447 tokens/s (paging) in 2 of 12 runs, once even without the
   reranker. Close them for the demo.
+- curl in Git Bash sends accented characters in the Windows code page, not
+  UTF-8: FastAPI answers 400 to a French question. Use /docs, Python or the UI.
 - `scripts/measure_vram.py` still contains an Arabic sample passage: left as
   it is so the Phase 0 VRAM measurements stay comparable.
 
